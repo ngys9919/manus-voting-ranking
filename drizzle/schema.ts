@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, bigint } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -25,4 +25,35 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * National Parks table for the ranking system.
+ * Stores park information and their current ELO rating.
+ */
+export const parks = mysqlTable("parks", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  location: varchar("location", { length: 255 }).notNull(),
+  imageUrl: text("imageUrl").notNull(),
+  eloRating: decimal("eloRating", { precision: 10, scale: 2 }).default("1500").notNull(),
+  voteCount: int("voteCount").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Park = typeof parks.$inferSelect;
+export type InsertPark = typeof parks.$inferInsert;
+
+/**
+ * Votes table to record all matchup results.
+ * Tracks which park won in each head-to-head comparison.
+ */
+export const votes = mysqlTable("votes", {
+  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  park1Id: int("park1Id").notNull(),
+  park2Id: int("park2Id").notNull(),
+  winnerId: int("winnerId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Vote = typeof votes.$inferSelect;
+export type InsertVote = typeof votes.$inferInsert;
