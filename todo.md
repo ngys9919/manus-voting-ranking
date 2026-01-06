@@ -30,3 +30,6 @@
 - [x] Test vote submission and ranking updates
 - [x] Test UI responsiveness
 - [x] Add error handling and user feedback
+
+## Enhancements
+- [x] Add skip button to voting interface to get new matchup without voting

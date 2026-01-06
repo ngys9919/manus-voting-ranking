@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, ArrowLeft, Zap } from "lucide-react";
+import { Loader2, ArrowLeft, Zap, SkipForward } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
 export default function Vote() {
   const [, setLocation] = useLocation();
   const [isVoting, setIsVoting] = useState(false);
+  const [isSkipping, setIsSkipping] = useState(false);
 
   const matchupQuery = trpc.parks.getMatchup.useQuery();
   const submitVoteMutation = trpc.parks.submitVote.useMutation();
@@ -32,6 +33,19 @@ export default function Vote() {
       console.error(error);
     } finally {
       setIsVoting(false);
+    }
+  };
+
+  const handleSkip = async () => {
+    setIsSkipping(true);
+    try {
+      await matchupQuery.refetch();
+      toast.info("Skipped to next matchup");
+    } catch (error) {
+      toast.error("Failed to load next matchup");
+      console.error(error);
+    } finally {
+      setIsSkipping(false);
     }
   };
 
@@ -74,7 +88,16 @@ export default function Vote() {
             Back
           </button>
           <h1 className="text-2xl font-bold text-slate-900">Which park do you prefer?</h1>
-          <div className="w-12" />
+          <Button
+            onClick={handleSkip}
+            disabled={isSkipping || isVoting}
+            variant="ghost"
+            size="sm"
+            className="text-slate-600 hover:text-slate-900"
+            title="Skip to next matchup"
+          >
+            <SkipForward className="w-5 h-5" />
+          </Button>
         </div>
       </header>
 
@@ -99,7 +122,7 @@ export default function Vote() {
               </div>
               <Button
                 onClick={() => handleVote(park1.id)}
-                disabled={isVoting}
+                disabled={isVoting || isSkipping}
                 className="w-full bg-emerald-600 hover:bg-emerald-700"
               >
                 {isVoting ? (
@@ -135,7 +158,7 @@ export default function Vote() {
               </div>
               <Button
                 onClick={() => handleVote(park2.id)}
-                disabled={isVoting}
+                disabled={isVoting || isSkipping}
                 variant="outline"
                 className="w-full"
               >
