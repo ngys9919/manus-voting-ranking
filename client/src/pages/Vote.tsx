@@ -1,15 +1,24 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Zap, SkipForward } from "lucide-react";
+import { ParkDetailsModal } from "@/components/ParkDetailsModal";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import type { Park } from "../../../drizzle/schema";
 
 export default function Vote() {
   const [, setLocation] = useLocation();
   const [isVoting, setIsVoting] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
+  const [selectedPark, setSelectedPark] = useState<Park | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleParkClick = (park: Park) => {
+    setSelectedPark(park);
+    setIsModalOpen(true);
+  };
 
   const matchupQuery = trpc.parks.getMatchup.useQuery();
   const submitVoteMutation = trpc.parks.submitVote.useMutation();
@@ -105,7 +114,10 @@ export default function Vote() {
       <main className="max-w-6xl mx-auto px-4 py-12">
         <div className="grid md:grid-cols-2 gap-8 mb-8">
           {/* Park 1 */}
-          <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+          <Card
+            className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => handleParkClick(park1)}
+          >
             <div className="aspect-video overflow-hidden bg-slate-200">
               <img
                 src={park1.imageUrl}
@@ -141,7 +153,10 @@ export default function Vote() {
           </Card>
 
           {/* Park 2 */}
-          <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+          <Card
+            className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => handleParkClick(park2)}
+          >
             <div className="aspect-video overflow-hidden bg-slate-200">
               <img
                 src={park2.imageUrl}
@@ -208,6 +223,13 @@ export default function Vote() {
           </div>
         </Card>
       </main>
+
+      {/* Park Details Modal */}
+      <ParkDetailsModal
+        park={selectedPark}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

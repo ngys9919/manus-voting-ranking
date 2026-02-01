@@ -1,12 +1,22 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Trophy, TrendingUp } from "lucide-react";
+import { ParkDetailsModal } from "@/components/ParkDetailsModal";
 import { trpc } from "@/lib/trpc";
+import type { Park } from "../../../drizzle/schema";
 
 export default function Rankings() {
   const [, setLocation] = useLocation();
+  const [selectedPark, setSelectedPark] = useState<Park | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const rankingsQuery = trpc.parks.getRankings.useQuery();
+
+  const handleParkClick = (park: Park) => {
+    setSelectedPark(park);
+    setIsModalOpen(true);
+  };
 
   if (rankingsQuery.isLoading) {
     return (
@@ -80,7 +90,8 @@ export default function Rankings() {
                 {rankings.map((park, index) => (
                   <tr
                     key={park.id}
-                    className="hover:bg-slate-50 transition-colors"
+                    className="hover:bg-slate-50 transition-colors cursor-pointer"
+                    onClick={() => handleParkClick(park)}
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -136,6 +147,13 @@ export default function Rankings() {
           </Button>
         </div>
       </main>
+
+      {/* Park Details Modal */}
+      <ParkDetailsModal
+        park={selectedPark}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

@@ -1,13 +1,23 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Clock, Zap } from "lucide-react";
+import { ParkDetailsModal } from "@/components/ParkDetailsModal";
 import { trpc } from "@/lib/trpc";
 import { formatDistanceToNow } from "date-fns";
+import type { Park } from "../../../drizzle/schema";
 
 export default function Recent() {
   const [, setLocation] = useLocation();
+  const [selectedPark, setSelectedPark] = useState<Park | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const recentVotesQuery = trpc.parks.getRecentVotes.useQuery({ limit: 30 });
+
+  const handleParkClick = (park: Park) => {
+    setSelectedPark(park);
+    setIsModalOpen(true);
+  };
 
   if (recentVotesQuery.isLoading) {
     return (
@@ -73,7 +83,10 @@ export default function Recent() {
 
                 <div className="grid md:grid-cols-3 gap-4 items-center">
                   {/* Park 1 */}
-                  <div className="flex items-center gap-3">
+                  <div
+                    className="flex items-center gap-3 cursor-pointer hover:opacity-75 transition-opacity"
+                    onClick={() => vote.park1 && handleParkClick(vote.park1)}
+                  >
                     {vote.park1 && (
                       <>
                         <img
@@ -102,7 +115,10 @@ export default function Recent() {
                   </div>
 
                   {/* Park 2 */}
-                  <div className="flex items-center gap-3 justify-end">
+                  <div
+                    className="flex items-center gap-3 justify-end cursor-pointer hover:opacity-75 transition-opacity"
+                    onClick={() => vote.park2 && handleParkClick(vote.park2)}
+                  >
                     {vote.park2 && (
                       <>
                         <div className="text-right">
@@ -121,7 +137,10 @@ export default function Recent() {
 
                 {/* Winner Badge */}
                 {vote.winner && (
-                  <div className="mt-4 pt-4 border-t border-slate-200">
+                  <div
+                    className="mt-4 pt-4 border-t border-slate-200 cursor-pointer hover:opacity-75 transition-opacity"
+                    onClick={() => handleParkClick(vote.winner!)}
+                  >
                     <p className="text-sm text-slate-600 mb-2">Winner:</p>
                     <div className="flex items-center gap-2">
                       <img
@@ -151,6 +170,13 @@ export default function Recent() {
           </Button>
         </div>
       </main>
+
+      {/* Park Details Modal */}
+      <ParkDetailsModal
+        park={selectedPark}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

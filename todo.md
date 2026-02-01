@@ -33,3 +33,6 @@
 
 ## Enhancements
 - [x] Add skip button to voting interface to get new matchup without voting
+- [x] Create park details modal with additional information
+- [x] Integrate modal across Vote, Rankings, and Recent Votes pages
+- [x] Make park cards clickable to open details modal
