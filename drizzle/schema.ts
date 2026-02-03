@@ -57,3 +57,18 @@ export const votes = mysqlTable("votes", {
 
 export type Vote = typeof votes.$inferSelect;
 export type InsertVote = typeof votes.$inferInsert;
+
+/**
+ * Park ELO History table to track rating changes over time.
+ * Records each ELO rating change for visualization and analysis.
+ */
+export const parkEloHistory = mysqlTable("parkEloHistory", {
+  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  parkId: int("parkId").notNull(),
+  eloRating: decimal("eloRating", { precision: 10, scale: 2 }).notNull(),
+  voteId: bigint("voteId", { mode: "number" }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ParkEloHistory = typeof parkEloHistory.$inferSelect;
+export type InsertParkEloHistory = typeof parkEloHistory.$inferInsert;

@@ -15,6 +15,13 @@
       "when": 1767610826621,
       "tag": "0001_tan_luke_cage",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1769975313800,
+      "tag": "0002_stormy_anita_blake",
+      "breakpoints": true
     }
   ]
 }

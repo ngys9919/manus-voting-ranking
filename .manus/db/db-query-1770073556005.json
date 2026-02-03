@@ -1,0 +1,52 @@
+{
+  "query": "SELECT * FROM parkEloHistory LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2U7vJ5sJRPnyws9.33a21dff6b44 --database 43WewEH4mNQYa4TcbeLn4r --execute SELECT * FROM parkEloHistory LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "parkId": "32",
+      "eloRating": "1516.00",
+      "voteId": "90001",
+      "createdAt": "2026-02-02 23:03:46"
+    },
+    {
+      "id": "2",
+      "parkId": "19",
+      "eloRating": "1484.00",
+      "voteId": "90001",
+      "createdAt": "2026-02-02 23:03:46"
+    },
+    {
+      "id": "3",
+      "parkId": "54",
+      "eloRating": "1467.00",
+      "voteId": "90002",
+      "createdAt": "2026-02-02 23:05:09"
+    },
+    {
+      "id": "4",
+      "parkId": "14",
+      "eloRating": "1500.00",
+      "voteId": "90002",
+      "createdAt": "2026-02-02 23:05:09"
+    },
+    {
+      "id": "5",
+      "parkId": "60",
+      "eloRating": "1485.00",
+      "voteId": "90003",
+      "createdAt": "2026-02-02 23:05:40"
+    },
+    {
+      "id": "6",
+      "parkId": "31",
+      "eloRating": "1531.00",
+      "voteId": "90003",
+      "createdAt": "2026-02-02 23:05:40"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tparkId\teloRating\tvoteId\tcreatedAt\n1\t32\t1516.00\t90001\t2026-02-02 23:03:46\n2\t19\t1484.00\t90001\t2026-02-02 23:03:46\n3\t54\t1467.00\t90002\t2026-02-02 23:05:09\n4\t14\t1500.00\t90002\t2026-02-02 23:05:09\n5\t60\t1485.00\t90003\t2026-02-02 23:05:40\n6\t31\t1531.00\t90003\t2026-02-02 23:05:40\n",
+  "stderr": "",
+  "execution_time_ms": 1583
+}

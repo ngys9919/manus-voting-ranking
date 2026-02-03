@@ -9,6 +9,7 @@ import {
   getRecentVotes,
   getParkById,
   recordVote,
+  getParkEloHistory,
 } from "./db";
 
 export const appRouter = router({
@@ -72,6 +73,18 @@ export const appRouter = router({
           input.winnerId
         );
         return result;
+      }),
+
+    getEloHistory: publicProcedure
+      .input(
+        z.object({
+          parkId: z.number(),
+          limit: z.number().default(100),
+        })
+      )
+      .query(async ({ input }) => {
+        const history = await getParkEloHistory(input.parkId, input.limit);
+        return history;
       }),
   }),
 });

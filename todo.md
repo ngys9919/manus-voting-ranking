@@ -36,3 +36,10 @@
 - [x] Create park details modal with additional information
 - [x] Integrate modal across Vote, Rankings, and Recent Votes pages
 - [x] Make park cards clickable to open details modal
+
+## ELO History Tracking
+- [x] Create park_elo_history table to track ELO changes over time
+- [x] Update vote submission to record ELO history snapshots
+- [x] Create API endpoint to fetch ELO history for a park
+- [x] Add Recharts line chart to park details modal
+- [x] Display ELO rating progression with timestamps

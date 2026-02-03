@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, parks, votes, InsertPark } from "../drizzle/schema";
+import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -241,19 +241,78 @@ export async function recordVote(
       .set({ voteCount: park2.voteCount + 1 })
       .where(eq(parks.id, park2Id));
 
-    const vote = await db.insert(votes).values({
+    const voteResult = await db.insert(votes).values({
       park1Id,
       park2Id,
       winnerId,
     });
 
+    // Record ELO history for both parks
+    // Get the vote ID from the inserted vote
+    const insertedVotes = await db
+      .select()
+      .from(votes)
+      .where(eq(votes.winnerId, winnerId))
+      .orderBy(desc(votes.createdAt))
+      .limit(1);
+    
+    if (insertedVotes.length > 0) {
+      const voteId = insertedVotes[0].id;
+      await recordEloHistory(park1Id, newRating1, voteId);
+      await recordEloHistory(park2Id, newRating2, voteId);
+    }
+
     return {
       park1: { ...park1, eloRating: newRating1 },
       park2: { ...park2, eloRating: newRating2 },
-      vote,
+      vote: voteResult,
     };
   } catch (error) {
     console.error("[Database] Failed to record vote:", error);
+    throw error;
+  }
+}
+
+export async function getParkEloHistory(parkId: number, limit: number = 100) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get ELO history: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(parkEloHistory)
+      .where(eq(parkEloHistory.parkId, parkId))
+      .orderBy(desc(parkEloHistory.createdAt))
+      .limit(limit);
+    return result.reverse(); // Return in chronological order
+  } catch (error) {
+    console.error("[Database] Failed to get ELO history:", error);
+    throw error;
+  }
+}
+
+export async function recordEloHistory(
+  parkId: number,
+  eloRating: number,
+  voteId: number
+) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot record ELO history: database not available");
+    return;
+  }
+
+  try {
+    await db.insert(parkEloHistory).values({
+      parkId,
+      eloRating: eloRating.toString(),
+      voteId,
+    });
+  } catch (error) {
+    console.error("[Database] Failed to record ELO history:", error);
     throw error;
   }
 }

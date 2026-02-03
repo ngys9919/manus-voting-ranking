@@ -1,0 +1,40 @@
+{
+  "query": "SELECT parkId, eloRating, createdAt FROM parkEloHistory ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2U7vJ5sJRPnyws9.33a21dff6b44 --database 43WewEH4mNQYa4TcbeLn4r --execute SELECT parkId, eloRating, createdAt FROM parkEloHistory ORDER BY createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "parkId": "31",
+      "eloRating": "1531.00",
+      "createdAt": "2026-02-02 23:05:40"
+    },
+    {
+      "parkId": "60",
+      "eloRating": "1485.00",
+      "createdAt": "2026-02-02 23:05:40"
+    },
+    {
+      "parkId": "54",
+      "eloRating": "1467.00",
+      "createdAt": "2026-02-02 23:05:09"
+    },
+    {
+      "parkId": "14",
+      "eloRating": "1500.00",
+      "createdAt": "2026-02-02 23:05:09"
+    },
+    {
+      "parkId": "19",
+      "eloRating": "1484.00",
+      "createdAt": "2026-02-02 23:03:46"
+    },
+    {
+      "parkId": "32",
+      "eloRating": "1516.00",
+      "createdAt": "2026-02-02 23:03:46"
+    }
+  ],
+  "messages": [],
+  "stdout": "parkId\teloRating\tcreatedAt\n31\t1531.00\t2026-02-02 23:05:40\n60\t1485.00\t2026-02-02 23:05:40\n54\t1467.00\t2026-02-02 23:05:09\n14\t1500.00\t2026-02-02 23:05:09\n19\t1484.00\t2026-02-02 23:03:46\n32\t1516.00\t2026-02-02 23:03:46\n",
+  "stderr": "",
+  "execution_time_ms": 1493
+}
