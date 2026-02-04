@@ -43,3 +43,7 @@
 - [x] Create API endpoint to fetch ELO history for a park
 - [x] Add Recharts line chart to park details modal
 - [x] Display ELO rating progression with timestamps
+
+
+## Bug Fixes
+- [x] Fix park images not displaying across all pages (Vote, Rankings, Recent Votes, Modal)
