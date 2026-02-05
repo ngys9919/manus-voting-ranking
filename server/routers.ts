@@ -12,6 +12,9 @@ import {
   getParkEloHistory,
   getUserVotes,
   getUserStatistics,
+  getUserAchievements,
+  checkAndUnlockAchievements,
+  seedAchievements,
 } from "./db";
 
 export const appRouter = router({
@@ -115,6 +118,23 @@ export const appRouter = router({
     getStatistics: protectedProcedure.query(async ({ ctx }) => {
       const stats = await getUserStatistics(ctx.user.id);
       return stats;
+    }),
+
+    getAchievements: protectedProcedure.query(async ({ ctx }) => {
+      const achievements = await getUserAchievements(ctx.user.id);
+      return achievements;
+    }),
+  }),
+
+  achievements: router({
+    getAll: protectedProcedure.query(async ({ ctx }) => {
+      const achievements = await getUserAchievements(ctx.user.id);
+      return achievements;
+    }),
+
+    checkAndUnlock: protectedProcedure.mutation(async ({ ctx }) => {
+      const unlockedAchievements = await checkAndUnlockAchievements(ctx.user.id);
+      return unlockedAchievements;
     }),
   }),
 });

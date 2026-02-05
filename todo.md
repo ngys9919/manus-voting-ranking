@@ -58,3 +58,15 @@
 - [x] Display user stats (total votes, favorite park, member since date)
 - [x] Show user's recent votes with park details and images
 - [x] Add link to profile from navigation header
+
+
+## Gamification System
+- [x] Create achievements table schema with achievement definitions
+- [x] Create userAchievements table to track earned achievements
+- [x] Define achievement types (First Vote, Milestone Votes, Favorite Park Milestones, etc.)
+- [x] Create achievement checking logic on vote submission
+- [x] Add API endpoints to fetch user achievements
+- [x] Create Badges component to display achievements
+- [x] Add achievements section to profile page
+- [x] Display achievement notifications when earned
+- [x] Add achievement progress indicators

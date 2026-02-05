@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { useState } from "react";
 import { ParkDetailsModal } from "@/components/ParkDetailsModal";
+import { Badges } from "@/components/Badges";
 import type { Park } from "@shared/types";
 import { Loader2, Trophy, TrendingUp, Calendar } from "lucide-react";
 
@@ -20,6 +21,11 @@ export default function Profile() {
 
   const { data: userVotes, isLoading: votesLoading } = trpc.profile.getUserVotes.useQuery(
     { limit: 50 },
+    { enabled: isAuthenticated }
+  );
+
+  const { data: achievements, isLoading: achievementsLoading } = trpc.profile.getAchievements.useQuery(
+    undefined,
     { enabled: isAuthenticated }
   );
 
@@ -100,6 +106,17 @@ export default function Profile() {
               <Calendar className="h-12 w-12 text-purple-600 opacity-20" />
             </div>
           </Card>
+        </div>
+
+        {/* Achievements */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          {achievementsLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            </div>
+          ) : (
+            <Badges achievements={(achievements || []).map(a => ({ ...a.achievement, unlockedAt: a.unlockedAt }))} />
+          )}
         </div>
 
         {/* Voting History */}

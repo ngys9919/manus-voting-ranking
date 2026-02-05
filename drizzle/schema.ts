@@ -87,3 +87,34 @@ export const userVotes = mysqlTable("userVotes", {
 
 export type UserVote = typeof userVotes.$inferSelect;
 export type InsertUserVote = typeof userVotes.$inferInsert;
+
+/**
+ * Achievements table defining all available achievements in the system.
+ * Contains metadata about each achievement type.
+ */
+export const achievements = mysqlTable("achievements", {
+  id: int("id").autoincrement().primaryKey(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  icon: varchar("icon", { length: 50 }).notNull(),
+  color: varchar("color", { length: 20 }).default("blue").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Achievement = typeof achievements.$inferSelect;
+export type InsertAchievement = typeof achievements.$inferInsert;
+
+/**
+ * User Achievements table tracking which achievements each user has earned.
+ * Records when a user unlocked an achievement.
+ */
+export const userAchievements = mysqlTable("userAchievements", {
+  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  achievementId: int("achievementId").notNull(),
+  unlockedAt: timestamp("unlockedAt").defaultNow().notNull(),
+});
+
+export type UserAchievement = typeof userAchievements.$inferSelect;
+export type InsertUserAchievement = typeof userAchievements.$inferInsert;

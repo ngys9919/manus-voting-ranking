@@ -22,6 +22,7 @@ export default function Vote() {
 
   const matchupQuery = trpc.parks.getMatchup.useQuery();
   const submitVoteMutation = trpc.parks.submitVote.useMutation();
+  const checkAchievementsMutation = trpc.achievements.checkAndUnlock.useMutation();
 
   const handleVote = async (winnerId: number) => {
     if (!matchupQuery.data) return;
@@ -35,6 +36,19 @@ export default function Vote() {
       });
 
       toast.success("Vote recorded!");
+      
+      // Check for newly unlocked achievements
+      try {
+        const unlockedAchievements = await checkAchievementsMutation.mutateAsync();
+        if (unlockedAchievements && unlockedAchievements.length > 0) {
+          unlockedAchievements.forEach(achievement => {
+            toast.success(`Achievement Unlocked: ${achievement.name}!`);
+          });
+        }
+      } catch (error) {
+        console.error("Failed to check achievements", error);
+      }
+      
       // Refetch new matchup
       await matchupQuery.refetch();
     } catch (error) {

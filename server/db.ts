@@ -1,7 +1,60 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote } from "../drizzle/schema";
+import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote, achievements, userAchievements, InsertAchievement, InsertUserAchievement } from "../drizzle/schema";
 import { ENV } from './_core/env';
+
+// Achievement definitions
+export const ACHIEVEMENT_DEFINITIONS = [
+  {
+    code: 'first_vote',
+    name: 'First Vote',
+    description: 'Cast your first vote',
+    icon: 'Zap',
+    color: 'yellow',
+  },
+  {
+    code: 'ten_votes',
+    name: 'Voting Enthusiast',
+    description: 'Cast 10 votes',
+    icon: 'Flame',
+    color: 'orange',
+  },
+  {
+    code: 'fifty_votes',
+    name: 'Park Ranger',
+    description: 'Cast 50 votes',
+    icon: 'Trophy',
+    color: 'green',
+  },
+  {
+    code: 'hundred_votes',
+    name: 'Voting Champion',
+    description: 'Cast 100 votes',
+    icon: 'Crown',
+    color: 'purple',
+  },
+  {
+    code: 'favorite_top_ten',
+    name: 'Favorite in Top 10',
+    description: 'Your favorite park reaches the top 10',
+    icon: 'Star',
+    color: 'blue',
+  },
+  {
+    code: 'favorite_top_five',
+    name: 'Favorite in Top 5',
+    description: 'Your favorite park reaches the top 5',
+    icon: 'Sparkles',
+    color: 'cyan',
+  },
+  {
+    code: 'favorite_number_one',
+    name: 'Ultimate Fan',
+    description: 'Your favorite park reaches #1',
+    icon: 'Heart',
+    color: 'red',
+  },
+];
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -412,6 +465,206 @@ export async function seedParks(parksData: InsertPark[]) {
     console.log(`[Database] Seeded ${parksData.length} parks`);
   } catch (error) {
     console.error("[Database] Failed to seed parks:", error);
+    throw error;
+  }
+}
+
+
+// Achievement functions
+
+export async function seedAchievements() {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot seed achievements: database not available");
+    return;
+  }
+
+  try {
+    // Check if achievements already exist
+    const existingAchievements = await db.select().from(achievements);
+    if (existingAchievements.length > 0) {
+      console.log("[Database] Achievements already seeded");
+      return;
+    }
+
+    const achievementsToInsert = ACHIEVEMENT_DEFINITIONS.map(def => ({
+      code: def.code,
+      name: def.name,
+      description: def.description,
+      icon: def.icon,
+      color: def.color,
+    }));
+
+    await db.insert(achievements).values(achievementsToInsert);
+    console.log(`[Database] Seeded ${achievementsToInsert.length} achievements`);
+  } catch (error) {
+    console.error("[Database] Failed to seed achievements:", error);
+    throw error;
+  }
+}
+
+export async function getAchievementByCode(code: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get achievement: database not available");
+    return null;
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(achievements)
+      .where(eq(achievements.code, code))
+      .limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error("[Database] Failed to get achievement:", error);
+    throw error;
+  }
+}
+
+export async function getUserAchievements(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user achievements: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db
+      .select({
+        id: userAchievements.id,
+        userId: userAchievements.userId,
+        achievementId: userAchievements.achievementId,
+        unlockedAt: userAchievements.unlockedAt,
+        achievement: achievements,
+      })
+      .from(userAchievements)
+      .innerJoin(achievements, eq(userAchievements.achievementId, achievements.id))
+      .where(eq(userAchievements.userId, userId))
+      .orderBy(desc(userAchievements.unlockedAt));
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get user achievements:", error);
+    throw error;
+  }
+}
+
+export async function hasUserAchievement(userId: number, achievementCode: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot check achievement: database not available");
+    return false;
+  }
+
+  try {
+    const achievement = await getAchievementByCode(achievementCode);
+    if (!achievement) return false;
+
+    const result = await db
+      .select()
+      .from(userAchievements)
+      .where(
+        eq(userAchievements.userId, userId) &&
+        eq(userAchievements.achievementId, achievement.id)
+      )
+      .limit(1);
+    return result.length > 0;
+  } catch (error) {
+    console.error("[Database] Failed to check achievement:", error);
+    throw error;
+  }
+}
+
+export async function unlockAchievement(userId: number, achievementCode: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot unlock achievement: database not available");
+    return null;
+  }
+
+  try {
+    // Check if already unlocked
+    const alreadyUnlocked = await hasUserAchievement(userId, achievementCode);
+    if (alreadyUnlocked) {
+      return null;
+    }
+
+    const achievement = await getAchievementByCode(achievementCode);
+    if (!achievement) {
+      console.warn(`[Database] Achievement not found: ${achievementCode}`);
+      return null;
+    }
+
+    const result = await db.insert(userAchievements).values({
+      userId,
+      achievementId: achievement.id,
+    });
+
+    return achievement;
+  } catch (error) {
+    console.error("[Database] Failed to unlock achievement:", error);
+    throw error;
+  }
+}
+
+export async function checkAndUnlockAchievements(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot check achievements: database not available");
+    return [];
+  }
+
+  try {
+    const unlockedAchievements = [];
+    const userStats = await getUserStatistics(userId);
+    
+    if (!userStats) return [];
+
+    const totalVotes = userStats.totalVotes;
+    const favoritePark = userStats.favoritePark;
+
+    // Check vote count achievements
+    if (totalVotes === 1) {
+      const achievement = await unlockAchievement(userId, 'first_vote');
+      if (achievement) unlockedAchievements.push(achievement);
+    }
+
+    if (totalVotes === 10) {
+      const achievement = await unlockAchievement(userId, 'ten_votes');
+      if (achievement) unlockedAchievements.push(achievement);
+    }
+
+    if (totalVotes === 50) {
+      const achievement = await unlockAchievement(userId, 'fifty_votes');
+      if (achievement) unlockedAchievements.push(achievement);
+    }
+
+    if (totalVotes === 100) {
+      const achievement = await unlockAchievement(userId, 'hundred_votes');
+      if (achievement) unlockedAchievements.push(achievement);
+    }
+
+    // Check favorite park achievements
+    if (favoritePark) {
+      const allParks = await getAllParksSortedByElo();
+      const parkRank = allParks.findIndex(p => p.id === favoritePark.id) + 1;
+
+      if (parkRank === 1) {
+        const achievement = await unlockAchievement(userId, 'favorite_number_one');
+        if (achievement) unlockedAchievements.push(achievement);
+      } else if (parkRank <= 5) {
+        const achievement = await unlockAchievement(userId, 'favorite_top_five');
+        if (achievement) unlockedAchievements.push(achievement);
+      } else if (parkRank <= 10) {
+        const achievement = await unlockAchievement(userId, 'favorite_top_ten');
+        if (achievement) unlockedAchievements.push(achievement);
+      }
+    }
+
+    return unlockedAchievements;
+  } catch (error) {
+    console.error("[Database] Failed to check achievements:", error);
     throw error;
   }
 }
