@@ -47,3 +47,14 @@
 
 ## Bug Fixes
 - [x] Fix park images not displaying across all pages (Vote, Rankings, Recent Votes, Modal)
+
+
+## User Profile Page
+- [x] Create userVotes table to track individual user voting history
+- [x] Add getUserVotes API endpoint to fetch user's voting history
+- [x] Add getUserStatistics API endpoint to calculate total votes and favorite park
+- [x] Create Profile.tsx page component with voting history and statistics
+- [x] Add profile route to App.tsx navigation
+- [x] Display user stats (total votes, favorite park, member since date)
+- [x] Show user's recent votes with park details and images
+- [x] Add link to profile from navigation header

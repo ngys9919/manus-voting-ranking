@@ -22,6 +22,13 @@
       "when": 1769975313800,
       "tag": "0002_stormy_anita_blake",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1770305495490,
+      "tag": "0003_long_randall",
+      "breakpoints": true
     }
   ]
 }

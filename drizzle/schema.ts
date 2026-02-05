@@ -72,3 +72,18 @@ export const parkEloHistory = mysqlTable("parkEloHistory", {
 
 export type ParkEloHistory = typeof parkEloHistory.$inferSelect;
 export type InsertParkEloHistory = typeof parkEloHistory.$inferInsert;
+
+/**
+ * User Votes table to track individual user voting history.
+ * Records which user voted for which park in each matchup.
+ */
+export const userVotes = mysqlTable("userVotes", {
+  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  voteId: bigint("voteId", { mode: "number" }).notNull(),
+  parkVotedFor: int("parkVotedFor").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserVote = typeof userVotes.$inferSelect;
+export type InsertUserVote = typeof userVotes.$inferInsert;

@@ -1,7 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import {
   getAllParksSortedByElo,
@@ -10,6 +10,8 @@ import {
   getParkById,
   recordVote,
   getParkEloHistory,
+  getUserVotes,
+  getUserStatistics,
 } from "./db";
 
 export const appRouter = router({
@@ -66,11 +68,12 @@ export const appRouter = router({
           winnerId: z.number(),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const result = await recordVote(
           input.park1Id,
           input.park2Id,
-          input.winnerId
+          input.winnerId,
+          ctx.user?.id
         );
         return result;
       }),
@@ -86,6 +89,33 @@ export const appRouter = router({
         const history = await getParkEloHistory(input.parkId, input.limit);
         return history;
       }),
+  }),
+
+  profile: router({
+    getUserVotes: protectedProcedure
+      .input(
+        z.object({
+          limit: z.number().default(50),
+        })
+      )
+      .query(async ({ input, ctx }) => {
+        const userVotesData = await getUserVotes(ctx.user.id, input.limit);
+        const enrichedVotes = await Promise.all(
+          userVotesData.map(async (vote) => {
+            const park = await getParkById(vote.parkVotedFor);
+            return {
+              ...vote,
+              park,
+            };
+          })
+        );
+        return enrichedVotes;
+      }),
+
+    getStatistics: protectedProcedure.query(async ({ ctx }) => {
+      const stats = await getUserStatistics(ctx.user.id);
+      return stats;
+    }),
   }),
 });
 

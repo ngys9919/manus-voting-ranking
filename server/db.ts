@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory } from "../drizzle/schema";
+import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -199,7 +199,8 @@ function calculateEloRatings(
 export async function recordVote(
   park1Id: number,
   park2Id: number,
-  winnerId: number
+  winnerId: number,
+  userId?: number
 ) {
   const db = await getDb();
   if (!db) {
@@ -260,6 +261,11 @@ export async function recordVote(
       const voteId = insertedVotes[0].id;
       await recordEloHistory(park1Id, newRating1, voteId);
       await recordEloHistory(park2Id, newRating2, voteId);
+      
+      // Record user vote if userId is provided
+      if (userId) {
+        await recordUserVote(userId, voteId, winnerId);
+      }
     }
 
     return {
@@ -313,6 +319,83 @@ export async function recordEloHistory(
     });
   } catch (error) {
     console.error("[Database] Failed to record ELO history:", error);
+    throw error;
+  }
+}
+
+export async function recordUserVote(
+  userId: number,
+  voteId: number,
+  parkVotedFor: number
+) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot record user vote: database not available");
+    return;
+  }
+
+  try {
+    await db.insert(userVotes).values({
+      userId,
+      voteId,
+      parkVotedFor,
+    });
+  } catch (error) {
+    console.error("[Database] Failed to record user vote:", error);
+    throw error;
+  }
+}
+
+export async function getUserVotes(userId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user votes: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(userVotes)
+      .where(eq(userVotes.userId, userId))
+      .orderBy(desc(userVotes.createdAt))
+      .limit(limit);
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get user votes:", error);
+    throw error;
+  }
+}
+
+export async function getUserStatistics(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user statistics: database not available");
+    return null;
+  }
+
+  try {
+    const userVotesData = await getUserVotes(userId, 1000);
+    const totalVotes = userVotesData.length;
+
+    let favoritePark = null;
+    if (totalVotes > 0) {
+      const voteCounts: Record<number, number> = {};
+      for (const vote of userVotesData) {
+        voteCounts[vote.parkVotedFor] = (voteCounts[vote.parkVotedFor] || 0) + 1;
+      }
+      const mostVotedParkId = Object.keys(voteCounts).reduce((a, b) =>
+        voteCounts[parseInt(a)] > voteCounts[parseInt(b)] ? a : b
+      );
+      favoritePark = await getParkById(parseInt(mostVotedParkId));
+    }
+
+    return {
+      totalVotes,
+      favoritePark,
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get user statistics:", error);
     throw error;
   }
 }

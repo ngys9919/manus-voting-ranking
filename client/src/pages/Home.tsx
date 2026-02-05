@@ -1,19 +1,33 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Mountain, Trophy, Clock } from "lucide-react";
+import { Mountain, Trophy, Clock, User } from "lucide-react";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-3">
-            <Mountain className="w-8 h-8 text-emerald-600" />
-            <h1 className="text-3xl font-bold text-slate-900">National Park Ranker</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Mountain className="w-8 h-8 text-emerald-600" />
+              <h1 className="text-3xl font-bold text-slate-900">National Park Ranker</h1>
+            </div>
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                onClick={() => setLocation('/profile')}
+                className="flex items-center gap-2"
+              >
+                <User className="w-5 h-5" />
+                Profile
+              </Button>
+            )}
           </div>
           <p className="text-slate-600 mt-2">Vote on your favorite parks and see how they rank</p>
         </div>
