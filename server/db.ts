@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote, achievements, userAchievements, InsertAchievement, InsertUserAchievement } from "../drizzle/schema";
+import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote, achievements, userAchievements, InsertAchievement, InsertUserAchievement, challenges, userChallenges, InsertChallenge, InsertUserChallenge } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 // Achievement definitions
@@ -665,6 +665,298 @@ export async function checkAndUnlockAchievements(userId: number) {
     return unlockedAchievements;
   } catch (error) {
     console.error("[Database] Failed to check achievements:", error);
+    throw error;
+  }
+}
+
+
+// Challenge definitions
+export const CHALLENGE_DEFINITIONS = [
+  // Monthly Challenges
+  {
+    code: 'monthly_votes_25',
+    name: 'Vote Machine',
+    description: 'Cast 25 votes this month',
+    icon: 'Zap',
+    color: 'blue',
+    type: 'monthly' as const,
+    targetValue: 25,
+  },
+  {
+    code: 'monthly_parks_15',
+    name: 'Park Explorer',
+    description: 'Vote for 15 different parks this month',
+    icon: 'Map',
+    color: 'green',
+    type: 'monthly' as const,
+    targetValue: 15,
+  },
+  {
+    code: 'monthly_streak_10',
+    name: 'Voting Streak',
+    description: 'Vote on 10 consecutive days this month',
+    icon: 'Flame',
+    color: 'orange',
+    type: 'monthly' as const,
+    targetValue: 10,
+  },
+  // Seasonal Challenges
+  {
+    code: 'seasonal_winter_100',
+    name: 'Winter Champion',
+    description: 'Cast 100 votes during winter season',
+    icon: 'Snowflake',
+    color: 'cyan',
+    type: 'seasonal' as const,
+    season: 'winter',
+    targetValue: 100,
+  },
+  {
+    code: 'seasonal_spring_100',
+    name: 'Spring Awakening',
+    description: 'Cast 100 votes during spring season',
+    icon: 'Flower2',
+    color: 'pink',
+    type: 'seasonal' as const,
+    season: 'spring',
+    targetValue: 100,
+  },
+  {
+    code: 'seasonal_summer_100',
+    name: 'Summer Vacation',
+    description: 'Cast 100 votes during summer season',
+    icon: 'Sun',
+    color: 'yellow',
+    type: 'seasonal' as const,
+    season: 'summer',
+    targetValue: 100,
+  },
+  {
+    code: 'seasonal_fall_100',
+    name: 'Fall Festival',
+    description: 'Cast 100 votes during fall season',
+    icon: 'Leaf',
+    color: 'orange',
+    type: 'seasonal' as const,
+    season: 'fall',
+    targetValue: 100,
+  },
+];
+
+// Challenge management functions
+
+export async function seedChallenges() {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot seed challenges: database not available");
+    return;
+  }
+
+  try {
+    // Check if challenges already exist
+    const existingChallenges = await db.select().from(challenges);
+    if (existingChallenges.length > 0) {
+      console.log("[Database] Challenges already seeded");
+      return;
+    }
+
+    // Create current month and season dates
+    const now = new Date();
+    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    
+    // Determine current season
+    const month = now.getMonth();
+    let currentSeason = 'winter';
+    if (month >= 2 && month < 5) currentSeason = 'spring';
+    else if (month >= 5 && month < 8) currentSeason = 'summer';
+    else if (month >= 8 && month < 11) currentSeason = 'fall';
+
+    const challengesToInsert = CHALLENGE_DEFINITIONS.map(def => {
+      let startDate = currentMonth;
+      let endDate = nextMonth;
+
+      if (def.type === 'seasonal') {
+        // Calculate season dates
+        if (def.season === 'winter') {
+          startDate = new Date(now.getFullYear(), 11, 21);
+          endDate = new Date(now.getFullYear() + 1, 2, 20);
+        } else if (def.season === 'spring') {
+          startDate = new Date(now.getFullYear(), 2, 20);
+          endDate = new Date(now.getFullYear(), 5, 20);
+        } else if (def.season === 'summer') {
+          startDate = new Date(now.getFullYear(), 5, 20);
+          endDate = new Date(now.getFullYear(), 8, 22);
+        } else if (def.season === 'fall') {
+          startDate = new Date(now.getFullYear(), 8, 22);
+          endDate = new Date(now.getFullYear(), 11, 21);
+        }
+      }
+
+      return {
+        code: def.code,
+        name: def.name,
+        description: def.description,
+        icon: def.icon,
+        color: def.color,
+        type: def.type,
+        season: def.season || null,
+        targetValue: def.targetValue,
+        startDate,
+        endDate,
+        isActive: true,
+      };
+    });
+
+    await db.insert(challenges).values(challengesToInsert);
+    console.log(`[Database] Seeded ${challengesToInsert.length} challenges`);
+  } catch (error) {
+    console.error("[Database] Failed to seed challenges:", error);
+    throw error;
+  }
+}
+
+export async function getActiveChallenges() {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get challenges: database not available");
+    return [];
+  }
+
+  try {
+    const now = new Date();
+    const result = await db
+      .select()
+      .from(challenges)
+      .where(eq(challenges.isActive, true));
+    // Filter in memory for date comparison
+    return result.filter(c => c.startDate <= now && c.endDate >= now);
+  } catch (error) {
+    console.error("[Database] Failed to get active challenges:", error);
+    throw error;
+  }
+}
+
+export async function getUserChallengeProgress(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user challenge progress: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db
+      .select({
+        id: userChallenges.id,
+        userId: userChallenges.userId,
+        challengeId: userChallenges.challengeId,
+        progress: userChallenges.progress,
+        isCompleted: userChallenges.isCompleted,
+        completedAt: userChallenges.completedAt,
+        challenge: challenges,
+      })
+      .from(userChallenges)
+      .innerJoin(challenges, eq(userChallenges.challengeId, challenges.id))
+      .where(eq(userChallenges.userId, userId));
+    return result.map(r => ({
+      ...r,
+      completedAt: r.completedAt || undefined,
+    }));
+  } catch (error) {
+    console.error("[Database] Failed to get user challenge progress:", error);
+    throw error;
+  }
+}
+
+export async function updateChallengeProgress(userId: number, challengeId: number, increment: number = 1) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update challenge progress: database not available");
+    return null;
+  }
+
+  try {
+    // Get or create user challenge
+    let userChallenge = await db
+      .select()
+      .from(userChallenges)
+      .where(
+        eq(userChallenges.userId, userId) &&
+        eq(userChallenges.challengeId, challengeId)
+      )
+      .limit(1);
+
+    if (userChallenge.length === 0) {
+      // Create new user challenge
+      await db.insert(userChallenges).values({
+        userId,
+        challengeId,
+        progress: increment,
+      });
+    } else {
+      // Update existing progress
+      const newProgress = userChallenge[0].progress + increment;
+      
+      // Get challenge to check if completed
+      const challenge = await db
+        .select()
+        .from(challenges)
+        .where(eq(challenges.id, challengeId))
+        .limit(1);
+
+      const isCompleted = challenge.length > 0 && newProgress >= challenge[0].targetValue;
+
+      await db
+        .update(userChallenges)
+        .set({
+          progress: newProgress,
+          isCompleted,
+          completedAt: isCompleted ? new Date() : null,
+        })
+        .where(
+          eq(userChallenges.userId, userId) &&
+          eq(userChallenges.challengeId, challengeId)
+        );
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update challenge progress:", error);
+    throw error;
+  }
+}
+
+export async function getCompletedChallenges(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get completed challenges: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db
+      .select({
+        id: userChallenges.id,
+        userId: userChallenges.userId,
+        challengeId: userChallenges.challengeId,
+        progress: userChallenges.progress,
+        isCompleted: userChallenges.isCompleted,
+        completedAt: userChallenges.completedAt,
+        challenge: challenges,
+      })
+      .from(userChallenges)
+      .innerJoin(challenges, eq(userChallenges.challengeId, challenges.id))
+      .where(
+        eq(userChallenges.userId, userId) &&
+        eq(userChallenges.isCompleted, true)
+      )
+      .orderBy(desc(userChallenges.completedAt));
+    return result.map(r => ({
+      ...r,
+      completedAt: r.completedAt || undefined,
+    }));
+  } catch (error) {
+    console.error("[Database] Failed to get completed challenges:", error);
     throw error;
   }
 }

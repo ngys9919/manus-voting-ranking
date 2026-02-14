@@ -36,6 +36,13 @@
       "when": 1770307791735,
       "tag": "0004_sweet_kate_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1771075489898,
+      "tag": "0005_wandering_nitro",
+      "breakpoints": true
     }
   ]
 }

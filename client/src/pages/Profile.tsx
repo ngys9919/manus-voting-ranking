@@ -6,6 +6,7 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import { ParkDetailsModal } from "@/components/ParkDetailsModal";
 import { Badges } from "@/components/Badges";
+import { Challenges } from "@/components/Challenges";
 import type { Park } from "@shared/types";
 import { Loader2, Trophy, TrendingUp, Calendar } from "lucide-react";
 
@@ -25,6 +26,16 @@ export default function Profile() {
   );
 
   const { data: achievements, isLoading: achievementsLoading } = trpc.profile.getAchievements.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
+
+  const { data: userChallenges, isLoading: challengesLoading } = trpc.challenges.getUserProgress.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
+
+  const { data: completedChallenges, isLoading: completedChallengesLoading } = trpc.challenges.getCompleted.useQuery(
     undefined,
     { enabled: isAuthenticated }
   );
@@ -119,6 +130,20 @@ export default function Profile() {
           )}
         </div>
 
+        {/* Challenges */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-2xl font-bold mb-6">Challenges</h2>
+          {challengesLoading || completedChallengesLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            </div>
+          ) : (
+            <Challenges 
+              activeChallenges={userChallenges || []} 
+              completedChallenges={completedChallenges || []}
+            />
+          )}
+        </div>
         {/* Voting History */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold mb-6">Voting History</h2>

@@ -70,3 +70,18 @@
 - [x] Add achievements section to profile page
 - [x] Display achievement notifications when earned
 - [x] Add achievement progress indicators
+
+
+## Seasonal & Monthly Challenges
+- [x] Create challenges table schema with challenge definitions
+- [x] Create userChallenges table to track challenge progress
+- [x] Define monthly challenges (Vote Machine, Park Explorer, Voting Streak)
+- [x] Define seasonal challenges (Winter, Spring, Summer, Fall Champions)
+- [x] Create API endpoints to fetch active challenges
+- [x] Create API endpoints to track user challenge progress
+- [x] Implement challenge progress update on vote submission
+- [x] Create Challenges component to display active and completed challenges
+- [x] Add challenges section to profile page
+- [x] Display progress bars and completion status for each challenge
+- [x] Show completed challenges gallery
+- [x] Auto-seed challenges on server startup

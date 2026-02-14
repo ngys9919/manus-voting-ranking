@@ -21,6 +21,8 @@ export default function Vote() {
   };
 
   const matchupQuery = trpc.parks.getMatchup.useQuery();
+  const activeChallengesQuery = trpc.challenges.getActive.useQuery();
+  const updateChallengeMutation = trpc.challenges.updateProgress.useMutation();
   const submitVoteMutation = trpc.parks.submitVote.useMutation();
   const checkAchievementsMutation = trpc.achievements.checkAndUnlock.useMutation();
 
@@ -36,6 +38,19 @@ export default function Vote() {
       });
 
       toast.success("Vote recorded!");
+      
+      // Update challenge progress
+      try {
+        const activeChallenges = activeChallengesQuery.data || [];
+        for (const challenge of activeChallenges) {
+          await updateChallengeMutation.mutateAsync({
+            challengeId: challenge.id,
+            increment: 1,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to update challenge progress", error);
+      }
       
       // Check for newly unlocked achievements
       try {

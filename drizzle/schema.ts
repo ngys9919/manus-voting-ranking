@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, bigint } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, bigint, boolean } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -118,3 +118,44 @@ export const userAchievements = mysqlTable("userAchievements", {
 
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type InsertUserAchievement = typeof userAchievements.$inferInsert;
+
+
+/**
+ * Challenges table defining seasonal and monthly challenges.
+ * Tracks challenge metadata, time periods, and requirements.
+ */
+export const challenges = mysqlTable("challenges", {
+  id: int("id").autoincrement().primaryKey(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  icon: varchar("icon", { length: 50 }).notNull(),
+  color: varchar("color", { length: 20 }).default("blue").notNull(),
+  type: mysqlEnum("type", ["seasonal", "monthly"]).notNull(),
+  season: varchar("season", { length: 20 }), // "winter", "spring", "summer", "fall"
+  targetValue: int("targetValue").notNull(), // e.g., 25 votes, 10 parks
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate").notNull(),
+  isActive: boolean("isActive").notNull().default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Challenge = typeof challenges.$inferSelect;
+export type InsertChallenge = typeof challenges.$inferInsert;
+
+/**
+ * User Challenges table tracking user progress on challenges.
+ * Records current progress and completion status.
+ */
+export const userChallenges = mysqlTable("userChallenges", {
+  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  challengeId: int("challengeId").notNull(),
+  progress: int("progress").default(0).notNull(),
+  isCompleted: boolean("isCompleted").notNull().default(false),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserChallenge = typeof userChallenges.$inferSelect;
+export type InsertUserChallenge = typeof userChallenges.$inferInsert;

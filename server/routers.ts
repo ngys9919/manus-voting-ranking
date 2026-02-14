@@ -15,6 +15,10 @@ import {
   getUserAchievements,
   checkAndUnlockAchievements,
   seedAchievements,
+  getActiveChallenges,
+  getUserChallengeProgress,
+  updateChallengeProgress,
+  getCompletedChallenges,
 } from "./db";
 
 export const appRouter = router({
@@ -136,6 +140,39 @@ export const appRouter = router({
       const unlockedAchievements = await checkAndUnlockAchievements(ctx.user.id);
       return unlockedAchievements;
     }),
+  }),
+
+  challenges: router({
+    getActive: publicProcedure.query(async () => {
+      const activeChallenges = await getActiveChallenges();
+      return activeChallenges;
+    }),
+
+    getUserProgress: protectedProcedure.query(async ({ ctx }) => {
+      const progress = await getUserChallengeProgress(ctx.user.id);
+      return progress;
+    }),
+
+    getCompleted: protectedProcedure.query(async ({ ctx }) => {
+      const completed = await getCompletedChallenges(ctx.user.id);
+      return completed;
+    }),
+
+    updateProgress: protectedProcedure
+      .input(
+        z.object({
+          challengeId: z.number(),
+          increment: z.number().default(1),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const result = await updateChallengeProgress(
+          ctx.user.id,
+          input.challengeId,
+          input.increment
+        );
+        return result;
+      }),
   }),
 });
 
