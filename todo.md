@@ -105,3 +105,16 @@
 - [x] Integrate streak notifications into Vote page
 - [x] Add streak badges to achievements system
 - [x] Write comprehensive tests for streak logic
+
+
+## Weekly Streak Challenges
+- [x] Create weeklyStreakChallenges table to track weekly competitions
+- [x] Create weeklyBadges table for limited-time badge awards
+- [x] Implement weekly winner determination logic (top 3 streakers)
+- [x] Create weekly challenge reset and new challenge generation
+- [x] Add API endpoints for weekly challenge data
+- [x] Create WeeklyChallenges UI component
+- [x] Display weekly challenge leaderboard on home page
+- [x] Show earned weekly badges on profile
+- [x] Add weekly challenge notifications when users rank in top 3
+- [x] Implement automatic weekly challenge rotation (every Monday)

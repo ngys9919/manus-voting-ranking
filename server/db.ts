@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote, achievements, userAchievements, InsertAchievement, InsertUserAchievement, challenges, userChallenges, InsertChallenge, InsertUserChallenge, userStreaks, InsertUserStreak, UserStreak } from "../drizzle/schema";
+import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote, achievements, userAchievements, InsertAchievement, InsertUserAchievement, challenges, userChallenges, InsertChallenge, InsertUserChallenge, userStreaks, InsertUserStreak, UserStreak, weeklyStreakChallenges, weeklyBadges, InsertWeeklyStreakChallenge, InsertWeeklyBadge, WeeklyBadge } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 // Achievement definitions
@@ -1273,5 +1273,232 @@ export async function getStreakLeaderboard(limit: number = 10) {
   } catch (error) {
     console.error("[Database] Failed to get streak leaderboard:", error);
     return [];
+  }
+}
+
+
+// Weekly Streak Challenge Functions
+
+export interface WeeklyChallenge {
+  id: number;
+  weekStartDate: Date;
+  weekEndDate: Date;
+  isActive: boolean;
+  topStreakers: Array<{
+    rank: number;
+    userId: number;
+    userName: string;
+    streakLength: number;
+    badgeIcon: string;
+    badgeName: string;
+  }>;
+}
+
+export async function getOrCreateCurrentWeeklyChallenge(): Promise<WeeklyChallenge | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get weekly challenge: database not available");
+    return null;
+  }
+
+  try {
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
+    weekStart.setHours(0, 0, 0, 0);
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7); // End of week (next Sunday)
+
+    // Check if challenge exists for this week
+    let challenge = await db
+      .select()
+      .from(weeklyStreakChallenges)
+      .where(eq(weeklyStreakChallenges.isActive, true) as any)
+      .limit(1);
+
+    if (challenge.length === 0) {
+      // Create new weekly challenge
+      const result = await db.insert(weeklyStreakChallenges).values({
+        weekStartDate: weekStart,
+        weekEndDate: weekEnd,
+        isActive: true,
+      });
+
+      challenge = await db
+        .select()
+        .from(weeklyStreakChallenges)
+        .where(eq(weeklyStreakChallenges.isActive, true) as any)
+        .limit(1);
+    }
+
+    if (challenge.length === 0) {
+      return null;
+    }
+
+    const topStreakers = await getWeeklyTopStreakers(challenge[0].id);
+
+    return {
+      id: Number(challenge[0].id),
+      weekStartDate: challenge[0].weekStartDate,
+      weekEndDate: challenge[0].weekEndDate,
+      isActive: challenge[0].isActive,
+      topStreakers,
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get or create weekly challenge:", error);
+    return null;
+  }
+}
+
+export async function getWeeklyTopStreakers(
+  challengeId: number
+): Promise<
+  Array<{
+    rank: number;
+    userId: number;
+    userName: string;
+    streakLength: number;
+    badgeIcon: string;
+    badgeName: string;
+  }>
+> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get top streakers: database not available");
+    return [];
+  }
+
+  try {
+    const badges = await db
+      .select({
+        rank: weeklyBadges.rank,
+        userId: weeklyBadges.userId,
+        userName: users.name,
+        streakLength: weeklyBadges.streakLength,
+        badgeIcon: weeklyBadges.badgeIcon,
+        badgeName: weeklyBadges.badgeName,
+      })
+      .from(weeklyBadges)
+      .innerJoin(users, eq(weeklyBadges.userId, users.id))
+      .where(eq(weeklyBadges.weeklyChallenge, BigInt(challengeId)) as any)
+      .orderBy(weeklyBadges.rank);
+
+    return badges.map((b) => ({
+      rank: b.rank,
+      userId: b.userId,
+      userName: b.userName || "Anonymous",
+      streakLength: b.streakLength,
+      badgeIcon: b.badgeIcon,
+      badgeName: b.badgeName,
+    }));
+  } catch (error) {
+    console.error("[Database] Failed to get weekly top streakers:", error);
+    return [];
+  }
+}
+
+export async function awardWeeklyBadges(challengeId: number): Promise<WeeklyBadge[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot award weekly badges: database not available");
+    return [];
+  }
+
+  try {
+    // Get top 3 streakers from leaderboard
+    const topStreakers = await db
+      .select({
+        userId: userStreaks.userId,
+        currentStreak: userStreaks.currentStreak,
+        userName: users.name,
+      })
+      .from(userStreaks)
+      .innerJoin(users, eq(userStreaks.userId, users.id))
+      .orderBy(desc(userStreaks.currentStreak))
+      .limit(3);
+
+    const badgeData = [
+      { rank: 1, icon: "🥇", name: "Weekly Champion" },
+      { rank: 2, icon: "🥈", name: "Weekly Runner-Up" },
+      { rank: 3, icon: "🥉", name: "Weekly Third Place" },
+    ];
+
+    const awardedBadges: WeeklyBadge[] = [];
+
+    for (let i = 0; i < topStreakers.length && i < 3; i++) {
+      const streaker = topStreakers[i];
+      const badge = badgeData[i];
+
+      const result = await db.insert(weeklyBadges).values({
+        weeklyChallenge: BigInt(challengeId),
+        userId: streaker.userId,
+        rank: badge.rank,
+        streakLength: streaker.currentStreak,
+        badgeIcon: badge.icon,
+        badgeName: badge.name,
+      });
+
+      awardedBadges.push({
+        id: BigInt(0), // Placeholder, would be returned from insert
+        weeklyChallenge: BigInt(challengeId),
+        userId: streaker.userId,
+        rank: badge.rank,
+        streakLength: streaker.currentStreak,
+        badgeIcon: badge.icon,
+        badgeName: badge.name,
+        awardedAt: new Date(),
+        createdAt: new Date(),
+      });
+    }
+
+    return awardedBadges;
+  } catch (error) {
+    console.error("[Database] Failed to award weekly badges:", error);
+    return [];
+  }
+}
+
+export async function getUserWeeklyBadges(userId: number): Promise<WeeklyBadge[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user weekly badges: database not available");
+    return [];
+  }
+
+  try {
+    const badges = await db
+      .select()
+      .from(weeklyBadges)
+      .where(eq(weeklyBadges.userId, userId) as any)
+      .orderBy(desc(weeklyBadges.awardedAt));
+
+    return badges;
+  } catch (error) {
+    console.error("[Database] Failed to get user weekly badges:", error);
+    return [];
+  }
+}
+
+export async function completeWeeklyChallenge(challengeId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot complete weekly challenge: database not available");
+    return false;
+  }
+
+  try {
+    await db
+      .update(weeklyStreakChallenges)
+      .set({
+        isActive: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(weeklyStreakChallenges.id, BigInt(challengeId)) as any);
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to complete weekly challenge:", error);
+    return false;
   }
 }

@@ -177,3 +177,39 @@ export const userStreaks = mysqlTable("userStreaks", {
 
 export type UserStreak = typeof userStreaks.$inferSelect;
 export type InsertUserStreak = typeof userStreaks.$inferInsert;
+
+
+/**
+ * Weekly Streak Challenges table tracking weekly competitions.
+ * Stores information about each week's challenge period and status.
+ */
+export const weeklyStreakChallenges = mysqlTable("weeklyStreakChallenges", {
+  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  weekStartDate: timestamp("weekStartDate").notNull(),
+  weekEndDate: timestamp("weekEndDate").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WeeklyStreakChallenge = typeof weeklyStreakChallenges.$inferSelect;
+export type InsertWeeklyStreakChallenge = typeof weeklyStreakChallenges.$inferInsert;
+
+/**
+ * Weekly Badges table tracking limited-time badges earned by top streakers.
+ * Stores badge awards for users who rank in top 3 each week.
+ */
+export const weeklyBadges = mysqlTable("weeklyBadges", {
+  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  weeklyChallenge: bigint("weeklyChallenge", { mode: "number" }).notNull(),
+  userId: int("userId").notNull(),
+  rank: int("rank").notNull(), // 1st, 2nd, or 3rd place
+  streakLength: int("streakLength").notNull(),
+  badgeIcon: varchar("badgeIcon", { length: 50 }).notNull(), // 🥇, 🥈, 🥉
+  badgeName: varchar("badgeName", { length: 100 }).notNull(), // "Weekly Champion", "Weekly Runner-Up", etc.
+  awardedAt: timestamp("awardedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type WeeklyBadge = typeof weeklyBadges.$inferSelect;
+export type InsertWeeklyBadge = typeof weeklyBadges.$inferInsert;

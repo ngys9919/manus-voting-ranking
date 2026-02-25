@@ -40,6 +40,11 @@ export default function Profile() {
     { enabled: isAuthenticated }
   );
 
+  const { data: weeklyBadges, isLoading: weeklyBadgesLoading } = trpc.weeklyStreakChallenges.getUserBadges.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
@@ -144,6 +149,26 @@ export default function Profile() {
             />
           )}
         </div>
+
+        {/* Weekly Badges */}
+        {weeklyBadges && weeklyBadges.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 className="text-2xl font-bold mb-6">Weekly Badges</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {weeklyBadges.map((badge) => (
+                <div key={badge.id} className="flex flex-col items-center p-4 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg border-2 border-yellow-200">
+                  <span className="text-4xl mb-2">{badge.badgeIcon}</span>
+                  <p className="font-semibold text-sm text-center">{badge.badgeName}</p>
+                  <p className="text-xs text-gray-600 mt-1">{badge.streakLength} day streak</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {new Date(badge.awardedAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Voting History */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold mb-6">Voting History</h2>

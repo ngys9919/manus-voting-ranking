@@ -24,6 +24,10 @@ import {
   updateVotingStreak,
   getUserStreak,
   getStreakLeaderboard,
+  getOrCreateCurrentWeeklyChallenge,
+  awardWeeklyBadges,
+  getUserWeeklyBadges,
+  completeWeeklyChallenge,
 } from "./db";
 
 export const appRouter = router({
@@ -219,6 +223,32 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const leaderboard = await getStreakLeaderboard(input.limit);
         return leaderboard;
+      }),
+  }),
+
+  weeklyStreakChallenges: router({
+    getCurrent: publicProcedure.query(async () => {
+      const challenge = await getOrCreateCurrentWeeklyChallenge();
+      return challenge;
+    }),
+
+    getUserBadges: protectedProcedure.query(async ({ ctx }) => {
+      const badges = await getUserWeeklyBadges(ctx.user.id);
+      return badges;
+    }),
+
+    awardBadges: protectedProcedure
+      .input(z.object({ challengeId: z.number() }))
+      .mutation(async ({ input }) => {
+        const badges = await awardWeeklyBadges(input.challengeId);
+        return badges;
+      }),
+
+    completeChallenge: protectedProcedure
+      .input(z.object({ challengeId: z.number() }))
+      .mutation(async ({ input }) => {
+        const success = await completeWeeklyChallenge(input.challengeId);
+        return success;
       }),
   }),
 });

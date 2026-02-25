@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Mountain, Trophy, Clock, User } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { WeeklyChallenges } from "@/components/WeeklyChallenges";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -71,6 +72,12 @@ export default function Home() {
               <Button variant="outline" className="w-full">View Recent</Button>
             </div>
           </Card>
+        </div>
+
+        {/* Weekly Challenges Section */}
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold text-slate-900 mb-6">Weekly Streak Challenge</h2>
+          <WeeklyChallenges />
         </div>
 
         {/* Info Section */}
