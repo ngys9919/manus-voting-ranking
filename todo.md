@@ -144,3 +144,17 @@
 - [x] Add statistics (total earned, completion percentage)
 - [x] Integrate into Profile page
 - [x] Write comprehensive tests
+
+
+## Public Leaderboards
+- [x] Create API endpoints for top voters leaderboard
+- [x] Create API endpoints for most achievements leaderboard
+- [x] Create API endpoints for longest streaks leaderboard
+- [x] Build Leaderboard page with tab navigation
+- [x] Create leaderboard card components with rankings
+- [x] Display user avatars and names
+- [x] Show ranking position (1st, 2nd, 3rd, etc.)
+- [x] Add medal badges for top 3 positions
+- [x] Display statistics (votes, achievements, streaks)
+- [x] Add pagination for large leaderboards
+- [x] Write comprehensive tests for leaderboard functionality

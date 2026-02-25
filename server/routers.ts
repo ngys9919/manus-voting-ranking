@@ -34,6 +34,9 @@ import {
   getUnreadNotificationCount,
   markNotificationAsRead,
   markAllNotificationsAsRead,
+  getTopVoters,
+  getMostAchievements,
+  getLongestStreaks,
 } from "./db";
 
 export const appRouter = router({
@@ -297,6 +300,22 @@ export const appRouter = router({
         return notifications;
       }),
   }),
+  leaderboard: router({
+    topVoters: publicProcedure
+      .input(z.object({ limit: z.number().min(1).max(100).default(10) }))
+      .query(async ({ input }) => {
+        return await getTopVoters(input.limit);
+      }),
+    mostAchievements: publicProcedure
+      .input(z.object({ limit: z.number().min(1).max(100).default(10) }))
+      .query(async ({ input }) => {
+        return await getMostAchievements(input.limit);
+      }),
+    longestStreaks: publicProcedure
+      .input(z.object({ limit: z.number().min(1).max(100).default(10) }))
+      .query(async ({ input }) => {
+        return await getLongestStreaks(input.limit);
+      }),
+  }),
 });
-
 export type AppRouter = typeof appRouter;

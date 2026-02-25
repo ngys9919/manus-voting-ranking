@@ -40,7 +40,7 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-12">
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-4 gap-6">
           {/* Vote Card */}
           <Card className="p-8 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setLocation('/vote')}>
             <div className="flex flex-col items-center text-center">
@@ -74,6 +74,18 @@ export default function Home() {
               <h2 className="text-2xl font-bold text-slate-900 mb-2">Recent Votes</h2>
               <p className="text-slate-600 mb-6">See what other users have been voting on</p>
               <Button variant="outline" className="w-full">View Recent</Button>
+            </div>
+          </Card>
+
+          {/* Leaderboard Card */}
+          <Card className="p-8 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setLocation('/leaderboard')}>
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+                <Trophy className="w-8 h-8 text-purple-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">Leaderboards</h2>
+              <p className="text-slate-600 mb-6">See top voters, achievements, and longest streaks</p>
+              <Button variant="outline" className="w-full">View Leaderboards</Button>
             </div>
           </Card>
         </div>

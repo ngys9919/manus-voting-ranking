@@ -1,4 +1,4 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote, achievements, userAchievements, InsertAchievement, InsertUserAchievement, challenges, userChallenges, InsertChallenge, InsertUserChallenge, userStreaks, InsertUserStreak, UserStreak, weeklyStreakChallenges, weeklyBadges, InsertWeeklyStreakChallenge, InsertWeeklyBadge, WeeklyBadge, weeklyNotifications, InsertWeeklyNotification, WeeklyNotification } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -1705,5 +1705,102 @@ export async function markAllNotificationsAsRead(userId: number): Promise<boolea
   } catch (error) {
     console.error("[Database] Failed to mark all notifications as read:", error);
     return false;
+  }
+}
+
+
+// Leaderboard functions
+export async function getTopVoters(limit: number = 10): Promise<Array<{ userId: number; userName: string | null; voteCount: number; rank: number }>> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get top voters: database not available");
+    return [];
+  }
+  try {
+    const result = await db
+      .select({
+        userId: users.id,
+        userName: users.name,
+        voteCount: sql<number>`COUNT(${userVotes.id})`,
+      })
+      .from(userVotes)
+      .innerJoin(users, eq(userVotes.userId, users.id))
+      .groupBy(userVotes.userId)
+      .orderBy(sql`COUNT(${userVotes.id}) DESC`)
+      .limit(limit);
+
+    return result.map((row, index) => ({
+      userId: row.userId,
+      userName: row.userName,
+      voteCount: row.voteCount as number,
+      rank: index + 1,
+    }));
+  } catch (error) {
+    console.error("[Database] Failed to get top voters:", error);
+    return [];
+  }
+}
+
+export async function getMostAchievements(limit: number = 10): Promise<Array<{ userId: number; userName: string | null; achievementCount: number; rank: number }>> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get most achievements: database not available");
+    return [];
+  }
+  try {
+    const result = await db
+      .select({
+        userId: users.id,
+        userName: users.name,
+        achievementCount: sql<number>`COUNT(DISTINCT ${userAchievements.achievementId})`,
+      })
+      .from(userAchievements)
+      .innerJoin(users, eq(userAchievements.userId, users.id))
+      .groupBy(userAchievements.userId)
+      .orderBy(sql`COUNT(DISTINCT ${userAchievements.achievementId}) DESC`)
+      .limit(limit);
+
+    return result.map((row, index) => ({
+      userId: row.userId,
+      userName: row.userName,
+      achievementCount: row.achievementCount as number,
+      rank: index + 1,
+    }));
+  } catch (error) {
+    console.error("[Database] Failed to get most achievements:", error);
+    return [];
+  }
+}
+
+export async function getLongestStreaks(limit: number = 10): Promise<Array<{ userId: number; userName: string | null; currentStreak: number; longestStreak: number; rank: number }>> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get longest streaks: database not available");
+    return [];
+  }
+  try {
+    const result = await db
+      .select({
+        userId: users.id,
+        userName: users.name,
+        currentStreak: sql<number>`COALESCE(MAX(${userStreaks.currentStreak}), 0)`,
+        longestStreak: sql<number>`COALESCE(MAX(${userStreaks.longestStreak}), 0)`,
+      })
+      .from(userStreaks)
+      .innerJoin(users, eq(userStreaks.userId, users.id))
+      .groupBy(userStreaks.userId)
+      .orderBy(sql`COALESCE(MAX(${userStreaks.longestStreak}), 0) DESC`)
+      .limit(limit);
+
+    return result.map((row, index) => ({
+      userId: row.userId,
+      userName: row.userName,
+      currentStreak: row.currentStreak as number,
+      longestStreak: row.longestStreak as number,
+      rank: index + 1,
+    }));
+  } catch (error) {
+    console.error("[Database] Failed to get longest streaks:", error);
+    return [];
   }
 }
