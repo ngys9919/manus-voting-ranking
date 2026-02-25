@@ -39,6 +39,11 @@ import {
   getLongestStreaks,
   updateUserProfile,
   getUserProfile,
+  getOrCreateUserReferralStats,
+  createReferral,
+  completeReferral,
+  getUserReferralInfo,
+  getReferralLeaderboard,
 } from "./db";
 
 export const appRouter = router({
@@ -341,6 +346,29 @@ export const appRouter = router({
       .input(z.object({ limit: z.number().min(1).max(100).default(10) }))
       .query(async ({ input }) => {
         return await getLongestStreaks(input.limit);
+      }),
+  }),
+  referral: router({
+    getStats: protectedProcedure.query(async ({ ctx }) => {
+      return await getOrCreateUserReferralStats(ctx.user.id);
+    }),
+    getReferralInfo: protectedProcedure.query(async ({ ctx }) => {
+      return await getUserReferralInfo(ctx.user.id);
+    }),
+    createInvite: protectedProcedure
+      .input(z.object({ refereeEmail: z.string().email() }))
+      .mutation(async ({ ctx, input }) => {
+        return await createReferral(ctx.user.id, input.refereeEmail);
+      }),
+    completeReferral: publicProcedure
+      .input(z.object({ referralCode: z.string(), refereeId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await completeReferral(input.referralCode, input.refereeId);
+      }),
+    getLeaderboard: publicProcedure
+      .input(z.object({ limit: z.number().min(1).max(100).default(10) }))
+      .query(async ({ input }) => {
+        return await getReferralLeaderboard(input.limit);
       }),
   }),
 });

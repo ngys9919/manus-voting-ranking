@@ -171,3 +171,32 @@
 - [x] Show display name throughout the app
 - [x] Add profile update success/error messages
 - [x] Write comprehensive tests for profile updates
+
+
+## Social Sharing Features
+- [x] Create social sharing utility functions for generating share text
+- [x] Build SocialShareButtons component with Twitter, Facebook, LinkedIn support
+- [x] Add achievement sharing with custom messages
+- [x] Add leaderboard ranking sharing
+- [x] Implement share preview generation
+- [x] Add copy-to-clipboard functionality for share links
+- [x] Create shareable achievement badges
+- [x] Add analytics tracking for shares
+- [x] Write comprehensive tests for sharing functionality
+
+
+## Referral System
+- [x] Create referrals table to track referral relationships
+- [x] Create referralRewards table for bonus points and badges
+- [x] Implement unique referral code generation for each user
+- [x] Create referral tracking and validation logic
+- [x] Implement reward distribution on successful referrals
+- [x] Add exclusive referral badges to achievement system
+- [x] Create referral dashboard showing invites and rewards
+- [x] Build referral link sharing component
+- [x] Add referral statistics to user profile
+- [x] Write comprehensive tests for referral system
+
+
+## Bug Fixes
+- [ ] Fix OAuth callback error when voting

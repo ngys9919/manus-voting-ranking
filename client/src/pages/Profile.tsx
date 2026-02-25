@@ -8,6 +8,7 @@ import { Badges } from "@/components/Badges";
 import { BadgesGallery } from "@/components/BadgesGallery";
 import { Challenges } from "@/components/Challenges";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
+import { ReferralDashboard } from "@/components/ReferralDashboard";
 import { useAuth } from "@/_core/hooks/useAuth";
 import type { Park } from "@shared/types";
 import { Loader2, Trophy, TrendingUp, Calendar } from "lucide-react";
@@ -86,6 +87,12 @@ export default function Profile() {
               // Refresh user data if needed
             }}
           />
+        </div>
+
+        {/* Referral Dashboard */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">Referral Program</h2>
+          <ReferralDashboard />
         </div>
 
         {/* Statistics Cards */}

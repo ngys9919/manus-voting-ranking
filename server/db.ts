@@ -1,6 +1,6 @@
 import { eq, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote, achievements, userAchievements, InsertAchievement, InsertUserAchievement, challenges, userChallenges, InsertChallenge, InsertUserChallenge, userStreaks, InsertUserStreak, UserStreak, weeklyStreakChallenges, weeklyBadges, InsertWeeklyStreakChallenge, InsertWeeklyBadge, WeeklyBadge, weeklyNotifications, InsertWeeklyNotification, WeeklyNotification } from "../drizzle/schema";
+import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote, achievements, userAchievements, InsertAchievement, InsertUserAchievement, challenges, userChallenges, InsertChallenge, InsertUserChallenge, userStreaks, InsertUserStreak, UserStreak, weeklyStreakChallenges, weeklyBadges, InsertWeeklyStreakChallenge, InsertWeeklyBadge, WeeklyBadge, weeklyNotifications, InsertWeeklyNotification, WeeklyNotification, referrals, InsertReferral, referralRewards, InsertReferralReward, userReferralStats, InsertUserReferralStats } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 // Achievement definitions
@@ -1853,5 +1853,226 @@ export async function getUserProfile(userId: number): Promise<{ id: number; disp
   } catch (error) {
     console.error("[Database] Failed to get user profile:", error);
     return null;
+  }
+}
+
+
+// Referral System Functions
+
+/**
+ * Generate a unique referral code for a user
+ */
+function generateReferralCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+/**
+ * Create or get user referral stats
+ */
+export async function getOrCreateUserReferralStats(userId: number): Promise<any> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user referral stats: database not available");
+    return null;
+  }
+
+  try {
+    const existing = await db.select().from(userReferralStats).where(eq(userReferralStats.userId, userId));
+    if (existing.length > 0) {
+      return existing[0];
+    }
+
+    // Create new referral stats
+    const referralCode = generateReferralCode();
+    const newStats = await db.insert(userReferralStats).values({
+      userId,
+      referralCode,
+      totalInvites: 0,
+      completedReferrals: 0,
+      totalRewardsEarned: 0,
+    });
+
+    return { userId, referralCode, totalInvites: 0, completedReferrals: 0, totalRewardsEarned: 0 };
+  } catch (error) {
+    console.error("[Database] Failed to get or create user referral stats:", error);
+    return null;
+  }
+}
+
+/**
+ * Create a referral invitation
+ */
+export async function createReferral(referrerId: number, refereeEmail: string): Promise<any> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create referral: database not available");
+    return null;
+  }
+
+  try {
+    const referralCode = generateReferralCode();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days expiration
+
+    const result = await db.insert(referrals).values({
+      referrerId,
+      refereeId: 0, // Will be updated when referee signs up
+      referralCode,
+      status: 'pending',
+      expiresAt,
+    });
+
+    // Update referrer's stats
+    await db
+      .update(userReferralStats)
+      .set({ totalInvites: sql`totalInvites + 1`, lastInviteSentAt: new Date() })
+      .where(eq(userReferralStats.userId, referrerId));
+
+    return { referralCode, expiresAt };
+  } catch (error) {
+    console.error("[Database] Failed to create referral:", error);
+    return null;
+  }
+}
+
+/**
+ * Complete a referral when referee makes their first vote
+ */
+export async function completeReferral(referralCode: string, refereeId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot complete referral: database not available");
+    return false;
+  }
+
+  try {
+    const referralRecord = await db.select().from(referrals).where(eq(referrals.referralCode, referralCode));
+    if (referralRecord.length === 0) {
+      return false;
+    }
+
+    const referral = referralRecord[0];
+    if (referral.status !== 'pending') {
+      return false;
+    }
+
+    // Update referral status
+    await db
+      .update(referrals)
+      .set({ status: 'completed', refereeId, completedAt: new Date() })
+      .where(eq(referrals.referralCode, referralCode));
+
+    // Update referrer's stats
+    await db
+      .update(userReferralStats)
+      .set({ completedReferrals: sql`completedReferrals + 1` })
+      .where(eq(userReferralStats.userId, referral.referrerId));
+
+    // Award bonus points to referrer
+    await awardReferralReward(referral.referrerId, referral.id, 'bonus_votes', 10, 'Referral Bonus: 10 bonus votes');
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to complete referral:", error);
+    return false;
+  }
+}
+
+/**
+ * Award referral reward to user
+ */
+export async function awardReferralReward(userId: number, referralId: number, rewardType: 'bonus_votes' | 'exclusive_badge' | 'bonus_points', rewardValue: number, description: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot award referral reward: database not available");
+    return false;
+  }
+
+  try {
+    await db.insert(referralRewards).values({
+      referralId,
+      userId,
+      rewardType,
+      rewardValue,
+      description,
+      isRedeemed: false,
+    });
+
+    // Update user's total rewards
+    await db
+      .update(userReferralStats)
+      .set({ totalRewardsEarned: sql`totalRewardsEarned + ${rewardValue}` })
+      .where(eq(userReferralStats.userId, userId));
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to award referral reward:", error);
+    return false;
+  }
+}
+
+/**
+ * Get user's referral information
+ */
+export async function getUserReferralInfo(userId: number): Promise<any> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user referral info: database not available");
+    return null;
+  }
+
+  try {
+    const stats = await db.select().from(userReferralStats).where(eq(userReferralStats.userId, userId));
+    if (stats.length === 0) {
+      return null;
+    }
+
+    const rewards = await db.select().from(referralRewards).where(eq(referralRewards.userId, userId));
+
+    return {
+      ...stats[0],
+      rewards: rewards || [],
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get user referral info:", error);
+    return null;
+  }
+}
+
+/**
+ * Get referral leaderboard
+ */
+export async function getReferralLeaderboard(limit: number = 10): Promise<Array<{ userId: number; userName: string | null; completedReferrals: number; totalRewardsEarned: number; rank: number }>> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get referral leaderboard: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db
+      .select({
+        userId: userReferralStats.userId,
+        userName: users.name,
+        completedReferrals: userReferralStats.completedReferrals,
+        totalRewardsEarned: userReferralStats.totalRewardsEarned,
+      })
+      .from(userReferralStats)
+      .innerJoin(users, eq(userReferralStats.userId, users.id))
+      .orderBy(desc(userReferralStats.completedReferrals))
+      .limit(limit);
+
+    return result.map((row, index) => ({
+      ...row,
+      rank: index + 1,
+    }));
+  } catch (error) {
+    console.error("[Database] Failed to get referral leaderboard:", error);
+    return [];
   }
 }

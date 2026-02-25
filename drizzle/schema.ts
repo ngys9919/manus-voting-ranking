@@ -238,3 +238,59 @@ export const weeklyNotifications = mysqlTable("weeklyNotifications", {
 
 export type WeeklyNotification = typeof weeklyNotifications.$inferSelect;
 export type InsertWeeklyNotification = typeof weeklyNotifications.$inferInsert;
+
+
+/**
+ * Referrals table tracking user referral relationships.
+ * Stores referrer-referee relationships and tracks successful referrals.
+ */
+export const referrals = mysqlTable("referrals", {
+  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  referrerId: int("referrerId").notNull(), // User who sent the invite
+  refereeId: int("refereeId").notNull(), // User who was invited
+  referralCode: varchar("referralCode", { length: 20 }).notNull().unique(), // Unique code for tracking
+  status: mysqlEnum("status", ["pending", "completed", "expired"]).default("pending").notNull(),
+  completedAt: timestamp("completedAt"), // When referee made their first vote
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt").notNull(), // 30 days from creation
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Referral = typeof referrals.$inferSelect;
+export type InsertReferral = typeof referrals.$inferInsert;
+
+/**
+ * Referral Rewards table tracking bonus points and badges earned from referrals.
+ * Stores rewards given to referrers when referees complete actions.
+ */
+export const referralRewards = mysqlTable("referralRewards", {
+  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  referralId: bigint("referralId", { mode: "number" }).notNull(), // Link to referral
+  userId: int("userId").notNull(), // User receiving the reward
+  rewardType: mysqlEnum("rewardType", ["bonus_votes", "exclusive_badge", "bonus_points"]).notNull(),
+  rewardValue: int("rewardValue").notNull(), // Points or votes granted
+  description: varchar("description", { length: 255 }).notNull(),
+  isRedeemed: boolean("isRedeemed").default(false).notNull(),
+  redeemedAt: timestamp("redeemedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ReferralReward = typeof referralRewards.$inferSelect;
+export type InsertReferralReward = typeof referralRewards.$inferInsert;
+
+/**
+ * User Referral Stats table tracking referral statistics per user.
+ * Stores aggregated referral data for quick access.
+ */
+export const userReferralStats = mysqlTable("userReferralStats", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  referralCode: varchar("referralCode", { length: 20 }).notNull().unique(),
+  totalInvites: int("totalInvites").default(0).notNull(),
+  completedReferrals: int("completedReferrals").default(0).notNull(),
+  totalRewardsEarned: int("totalRewardsEarned").default(0).notNull(),
+  lastInviteSentAt: timestamp("lastInviteSentAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type UserReferralStats = typeof userReferralStats.$inferSelect;
+export type InsertUserReferralStats = typeof userReferralStats.$inferInsert;

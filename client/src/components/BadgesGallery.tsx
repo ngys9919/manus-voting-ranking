@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar, Trophy, Zap, Target } from "lucide-react";
+import { SocialShareButtons } from "./SocialShareButtons";
+import { generateAchievementShareText } from "@/lib/socialSharing";
 
 interface Achievement {
   id: number;
@@ -27,6 +29,7 @@ export function BadgesGallery({ achievements, isLoading = false }: BadgesGallery
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
   const [filterType, setFilterType] = useState<"all" | "unlocked" | "locked">("all");
   const [sortBy, setSortBy] = useState<"date" | "name" | "type">("date");
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const getAchievementIcon = (code: string) => {
     const iconMap: Record<string, string> = {
@@ -323,11 +326,38 @@ export function BadgesGallery({ achievements, isLoading = false }: BadgesGallery
                   )}
                 </div>
 
-                <Button onClick={() => setSelectedAchievement(null)} className="w-full mt-4">
+                {selectedAchievement.isUnlocked && (
+                  <Button onClick={() => setShowShareModal(true)} variant="outline" className="w-full mt-2">
+                    Share Achievement
+                  </Button>
+                )}
+                <Button onClick={() => setSelectedAchievement(null)} className="w-full mt-2">
                   Close
                 </Button>
               </div>
             </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Modal */}
+      <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share Your Achievement</DialogTitle>
+          </DialogHeader>
+          {selectedAchievement && selectedAchievement.isUnlocked && (
+            <SocialShareButtons
+              shareOptions={{
+                title: `I unlocked ${selectedAchievement.name}!`,
+                text: generateAchievementShareText(
+                  selectedAchievement.name,
+                  getAchievementIcon(selectedAchievement.code)
+                ),
+                url: typeof window !== "undefined" ? window.location.href : "",
+                hashtags: ["NationalParkRanker", "Achievement", "Gaming"],
+              }}
+            />
           )}
         </DialogContent>
       </Dialog>
