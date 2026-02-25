@@ -1,0 +1,40 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2U7vJ5sJRPnyws9.33a21dff6b44 --database 43WewEH4mNQYa4TcbeLn4r --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_43WewEH4mNQYa4TcbeLn4r": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_43WewEH4mNQYa4TcbeLn4r": "achievements"
+    },
+    {
+      "Tables_in_43WewEH4mNQYa4TcbeLn4r": "challenges"
+    },
+    {
+      "Tables_in_43WewEH4mNQYa4TcbeLn4r": "parkEloHistory"
+    },
+    {
+      "Tables_in_43WewEH4mNQYa4TcbeLn4r": "parks"
+    },
+    {
+      "Tables_in_43WewEH4mNQYa4TcbeLn4r": "userAchievements"
+    },
+    {
+      "Tables_in_43WewEH4mNQYa4TcbeLn4r": "userChallenges"
+    },
+    {
+      "Tables_in_43WewEH4mNQYa4TcbeLn4r": "userVotes"
+    },
+    {
+      "Tables_in_43WewEH4mNQYa4TcbeLn4r": "users"
+    },
+    {
+      "Tables_in_43WewEH4mNQYa4TcbeLn4r": "votes"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_43WewEH4mNQYa4TcbeLn4r\n__drizzle_migrations\nachievements\nchallenges\nparkEloHistory\nparks\nuserAchievements\nuserChallenges\nuserVotes\nusers\nvotes\n",
+  "stderr": "",
+  "execution_time_ms": 1558
+}
