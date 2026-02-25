@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE `parks` \nADD COLUMN `establishedYear` INT,\nADD COLUMN `areaSqMiles` DECIMAL(10,2),\nADD COLUMN `annualVisitors` INT,\nADD COLUMN `description` TEXT;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2U7vJ5sJRPnyws9.33a21dff6b44 --database 43WewEH4mNQYa4TcbeLn4r --execute ALTER TABLE `parks` \nADD COLUMN `establishedYear` INT,\nADD COLUMN `areaSqMiles` DECIMAL(10,2),\nADD COLUMN `annualVisitors` INT,\nADD COLUMN `description` TEXT;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1060 (42S21) at line 1: Duplicate column name 'establishedYear'"
+  ]
+}

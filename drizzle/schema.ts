@@ -55,7 +55,7 @@ export const parks = mysqlTable("parks", {
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 	establishedYear: int(),
 	areaSqMiles: decimal({ precision: 10, scale: 2 }),
-	unnualVisitors: int(),
+	annualVisitors: int(),
 	description: text(),
 });
 
