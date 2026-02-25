@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `weeklyBadges` (\n\t`id` bigint AUTO_INCREMENT NOT NULL,\n\t`weeklyChallenge` int NOT NULL,\n\t`userId` int NOT NULL,\n\t`rank` int NOT NULL,\n\t`streakLength` int NOT NULL,\n\t`badgeIcon` varchar(50) NOT NULL,\n\t`badgeName` varchar(100) NOT NULL,\n\t`awardedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n\t`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n\tPRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2U7vJ5sJRPnyws9.33a21dff6b44 --database 43WewEH4mNQYa4TcbeLn4r --execute CREATE TABLE IF NOT EXISTS `weeklyBadges` (\n\t`id` bigint AUTO_INCREMENT NOT NULL,\n\t`weeklyChallenge` int NOT NULL,\n\t`userId` int NOT NULL,\n\t`rank` int NOT NULL,\n\t`streakLength` int NOT NULL,\n\t`badgeIcon` varchar(50) NOT NULL,\n\t`badgeName` varchar(100) NOT NULL,\n\t`awardedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n\t`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n\tPRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1562
+}

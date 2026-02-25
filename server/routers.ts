@@ -45,6 +45,7 @@ import {
   getUserReferralInfo,
   getReferralLeaderboard,
 } from "./db";
+import { getUserWeeklyProgress, getWeeklyLeaderboard } from "./weeklyScheduler";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -289,6 +290,20 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const success = await completeWeeklyChallenge(input.challengeId);
         return success;
+      }),
+
+    getUserProgress: protectedProcedure
+      .input(z.object({ challengeId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const progress = await getUserWeeklyProgress(ctx.user.id, input.challengeId);
+        return progress;
+      }),
+
+    getLeaderboard: publicProcedure
+      .input(z.object({ challengeId: z.number() }))
+      .query(async ({ input }) => {
+        const leaderboard = await getWeeklyLeaderboard(input.challengeId);
+        return leaderboard;
       }),
   }),
 
