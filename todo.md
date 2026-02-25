@@ -158,3 +158,16 @@
 - [x] Display statistics (votes, achievements, streaks)
 - [x] Add pagination for large leaderboards
 - [x] Write comprehensive tests for leaderboard functionality
+
+
+## User Profile Customization
+- [x] Add displayName and avatarUrl fields to users table
+- [x] Create profile update functions in db.ts
+- [x] Add tRPC endpoints for updating profile
+- [x] Build profile edit form component
+- [x] Implement avatar upload functionality
+- [x] Add avatar preview before upload
+- [x] Display user avatar on profile page
+- [x] Show display name throughout the app
+- [x] Add profile update success/error messages
+- [x] Write comprehensive tests for profile updates

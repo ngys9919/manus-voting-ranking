@@ -1,4 +1,3 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
@@ -8,6 +7,8 @@ import { ParkDetailsModal } from "@/components/ParkDetailsModal";
 import { Badges } from "@/components/Badges";
 import { BadgesGallery } from "@/components/BadgesGallery";
 import { Challenges } from "@/components/Challenges";
+import { ProfileEditForm } from "@/components/ProfileEditForm";
+import { useAuth } from "@/_core/hooks/useAuth";
 import type { Park } from "@shared/types";
 import { Loader2, Trophy, TrendingUp, Calendar } from "lucide-react";
 
@@ -74,6 +75,17 @@ export default function Profile() {
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h1 className="text-3xl font-bold mb-2">{user?.name || "User"}</h1>
           <p className="text-gray-600">{user?.email}</p>
+        </div>
+
+        {/* Profile Edit Form */}
+        <div className="mb-8">
+          <ProfileEditForm
+            currentDisplayName={user?.displayName || ""}
+            currentAvatarUrl={user?.avatarUrl || ""}
+            onSuccess={() => {
+              // Refresh user data if needed
+            }}
+          />
         </div>
 
         {/* Statistics Cards */}

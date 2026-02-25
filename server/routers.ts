@@ -37,6 +37,8 @@ import {
   getTopVoters,
   getMostAchievements,
   getLongestStreaks,
+  updateUserProfile,
+  getUserProfile,
 } from "./db";
 
 export const appRouter = router({
@@ -146,6 +148,30 @@ export const appRouter = router({
       const achievements = await getUserAchievements(ctx.user.id);
       return achievements;
     }),
+
+    getProfile: protectedProcedure.query(async ({ ctx }) => {
+      const profile = await getUserProfile(ctx.user.id);
+      return profile;
+    }),
+
+    updateProfile: protectedProcedure
+      .input(
+        z.object({
+          displayName: z.string().max(255).optional(),
+          avatarUrl: z.string().url().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const success = await updateUserProfile(
+          ctx.user.id,
+          input.displayName,
+          input.avatarUrl
+        );
+        if (success) {
+          return { success: true, message: 'Profile updated successfully' };
+        }
+        return { success: false, message: 'Failed to update profile' };
+      }),
   }),
 
   achievements: router({

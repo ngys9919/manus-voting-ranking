@@ -1804,3 +1804,54 @@ export async function getLongestStreaks(limit: number = 10): Promise<Array<{ use
     return [];
   }
 }
+
+
+// Profile management functions
+export async function updateUserProfile(userId: number, displayName?: string, avatarUrl?: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update user profile: database not available");
+    return false;
+  }
+  try {
+    const updates: Record<string, any> = {};
+    if (displayName !== undefined) updates.displayName = displayName;
+    if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl;
+    
+    if (Object.keys(updates).length === 0) {
+      return true;
+    }
+
+    await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, userId));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update user profile:", error);
+    return false;
+  }
+}
+
+export async function getUserProfile(userId: number): Promise<{ id: number; displayName: string | null; avatarUrl: string | null; name: string | null } | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user profile: database not available");
+    return null;
+  }
+  try {
+    const result = await db
+      .select({
+        id: users.id,
+        displayName: users.displayName,
+        avatarUrl: users.avatarUrl,
+        name: users.name,
+      })
+      .from(users)
+      .where(eq(users.id, userId));
+    return result[0] || null;
+  } catch (error) {
+    console.error("[Database] Failed to get user profile:", error);
+    return null;
+  }
+}
