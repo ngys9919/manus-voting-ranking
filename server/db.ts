@@ -142,11 +142,11 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     }
 
     if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
+      values.lastSignedIn = new Date().toISOString();
     }
 
     if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
+      updateSet.lastSignedIn = new Date().toISOString();
     }
 
     await db.insert(users).values(values).onDuplicateKeyUpdate({
@@ -832,7 +832,7 @@ export async function seedChallenges() {
         targetValue: def.targetValue,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
-        isActive: true,
+        isActive: 1,
       };
     });
 
@@ -856,7 +856,7 @@ export async function getActiveChallenges() {
     const result = await db
       .select()
       .from(challenges)
-      .where(eq(challenges.isActive, true));
+      .where(eq(challenges.isActive, 1));
     // Filter in memory for date comparison
     const nowStr = now.toISOString();
     return result.filter(c => c.startDate <= nowStr && c.endDate >= nowStr);
@@ -939,7 +939,7 @@ export async function updateChallengeProgress(userId: number, challengeId: numbe
         .update(userChallenges)
         .set({
           progress: newProgress,
-          isCompleted,
+          isCompleted: isCompleted ? 1 : 0,
           completedAt: isCompleted ? new Date().toISOString() : null,
         })
         .where(
@@ -977,7 +977,7 @@ export async function getCompletedChallenges(userId: number) {
       .innerJoin(challenges, eq(userChallenges.challengeId, challenges.id))
       .where(
         eq(userChallenges.userId, userId) &&
-        eq(userChallenges.isCompleted, true)
+        eq(userChallenges.isCompleted, 1)
       )
       .orderBy(desc(userChallenges.completedAt));
     return result.map(r => ({
@@ -1215,9 +1215,9 @@ export async function updateVotingStreak(userId: number): Promise<StreakNotifica
         .set({
           currentStreak: newStreak,
           longestStreak: newLongestStreak,
-          lastVoteDate: new Date(),
-          streakStartDate: newStreak === 1 ? new Date() : streak.streakStartDate,
-          updatedAt: new Date(),
+          lastVoteDate: new Date().toISOString(),
+          streakStartDate: newStreak === 1 ? new Date().toISOString() : streak.streakStartDate,
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(userStreaks.userId, userId));
     }
@@ -1315,21 +1315,21 @@ export async function getOrCreateCurrentWeeklyChallenge(): Promise<WeeklyChallen
     let challenge = await db
       .select()
       .from(weeklyStreakChallenges)
-      .where(eq(weeklyStreakChallenges.isActive, true) as any)
+      .where(eq(weeklyStreakChallenges.isActive, 1) as any)
       .limit(1);
 
     if (challenge.length === 0) {
       // Create new weekly challenge
       const result = await db.insert(weeklyStreakChallenges).values({
-        weekStartDate: weekStart,
-        weekEndDate: weekEnd,
-        isActive: true,
+        weekStartDate: weekStart.toISOString(),
+        weekEndDate: weekEnd.toISOString(),
+        isActive: 1,
       });
 
       challenge = await db
         .select()
         .from(weeklyStreakChallenges)
-        .where(eq(weeklyStreakChallenges.isActive, true) as any)
+        .where(eq(weeklyStreakChallenges.isActive, 1) as any)
         .limit(1);
     }
 
@@ -1341,9 +1341,9 @@ export async function getOrCreateCurrentWeeklyChallenge(): Promise<WeeklyChallen
 
     return {
       id: Number(challenge[0].id),
-      weekStartDate: challenge[0].weekStartDate,
-      weekEndDate: challenge[0].weekEndDate,
-      isActive: challenge[0].isActive,
+      weekStartDate: new Date(challenge[0].weekStartDate),
+      weekEndDate: new Date(challenge[0].weekEndDate),
+      isActive: challenge[0].isActive === 1,
       topStreakers,
     };
   } catch (error) {
@@ -1441,15 +1441,15 @@ export async function awardWeeklyBadges(challengeId: number): Promise<WeeklyBadg
       });
 
       awardedBadges.push({
-        id: BigInt(0), // Placeholder, would be returned from insert
-        weeklyChallenge: BigInt(challengeId),
+        id: 0, // Placeholder, would be returned from insert
+        weeklyChallenge: challengeId,
         userId: streaker.userId,
         rank: badge.rank,
         streakLength: streaker.currentStreak,
         badgeIcon: badge.icon,
         badgeName: badge.name,
-        awardedAt: new Date(),
-        createdAt: new Date(),
+        awardedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       });
     }
 
@@ -1492,8 +1492,8 @@ export async function completeWeeklyChallenge(challengeId: number): Promise<bool
     await db
       .update(weeklyStreakChallenges)
       .set({
-        isActive: false,
-        updatedAt: new Date(),
+        isActive: 0,
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(weeklyStreakChallenges.id, BigInt(challengeId)) as any);
 
@@ -1551,9 +1551,9 @@ export async function sendTop3RankingNotifications(challengeId: number): Promise
       });
 
       notifications.push({
-        id: BigInt(0),
+        id: 0,
         userId: badge.userId,
-        weeklyChallenge: BigInt(challengeId),
+        weeklyChallenge: challengeId,
         type: "top_3_ranking",
         title: rankLabel,
         message: `Congratulations! Your ${badge.streakLength}-day voting streak earned you a ${badge.badgeName} badge. Keep it up!`,
@@ -1597,9 +1597,9 @@ export async function sendChallengeStartNotifications(challengeId: number): Prom
       });
 
       notifications.push({
-        id: BigInt(0),
+        id: 0,
         userId: user.id,
-        weeklyChallenge: BigInt(challengeId),
+        weeklyChallenge: challengeId,
         type: "challenge_start",
         title: "🏆 New Weekly Streak Challenge Started!",
         message: "A new weekly challenge has begun! Vote daily to build your streak and compete for top 3 badges.",

@@ -11,6 +11,9 @@ export const achievements = mysqlTable("achievements", {
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
 
+export type Achievement = typeof achievements.$inferSelect;
+export type InsertAchievement = typeof achievements.$inferInsert;
+
 export const challenges = mysqlTable("challenges", {
 	id: int().autoincrement().notNull(),
 	code: varchar({ length: 50 }).notNull(),
@@ -27,6 +30,9 @@ export const challenges = mysqlTable("challenges", {
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
 
+export type Challenge = typeof challenges.$inferSelect;
+export type InsertChallenge = typeof challenges.$inferInsert;
+
 export const parkEloHistory = mysqlTable("parkEloHistory", {
 	id: bigint({ mode: "number" }).autoincrement().notNull(),
 	parkId: int().notNull(),
@@ -34,6 +40,9 @@ export const parkEloHistory = mysqlTable("parkEloHistory", {
 	voteId: bigint({ mode: "number" }).notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
+
+export type ParkEloHistory = typeof parkEloHistory.$inferSelect;
+export type InsertParkEloHistory = typeof parkEloHistory.$inferInsert;
 
 export const parks = mysqlTable("parks", {
 	id: int().autoincrement().notNull(),
@@ -46,9 +55,12 @@ export const parks = mysqlTable("parks", {
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 	establishedYear: int(),
 	areaSqMiles: decimal({ precision: 10, scale: 2 }),
-	annualVisitors: int(),
+	unnualVisitors: int(),
 	description: text(),
 });
+
+export type Park = typeof parks.$inferSelect;
+export type InsertPark = typeof parks.$inferInsert;
 
 export const userAchievements = mysqlTable("userAchievements", {
 	id: bigint({ mode: "number" }).autoincrement().notNull(),
@@ -56,6 +68,9 @@ export const userAchievements = mysqlTable("userAchievements", {
 	achievementId: int().notNull(),
 	unlockedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
+
+export type UserAchievement = typeof userAchievements.$inferSelect;
+export type InsertUserAchievement = typeof userAchievements.$inferInsert;
 
 export const userChallenges = mysqlTable("userChallenges", {
 	id: bigint({ mode: "number" }).autoincrement().notNull(),
@@ -67,6 +82,9 @@ export const userChallenges = mysqlTable("userChallenges", {
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
 
+export type UserChallenge = typeof userChallenges.$inferSelect;
+export type InsertUserChallenge = typeof userChallenges.$inferInsert;
+
 export const userVotes = mysqlTable("userVotes", {
 	id: bigint({ mode: "number" }).autoincrement().notNull(),
 	userId: int().notNull(),
@@ -74,6 +92,9 @@ export const userVotes = mysqlTable("userVotes", {
 	parkVotedFor: int().notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
+
+export type UserVote = typeof userVotes.$inferSelect;
+export type InsertUserVote = typeof userVotes.$inferInsert;
 
 export const users = mysqlTable("users", {
 	id: int().autoincrement().notNull(),
@@ -89,6 +110,9 @@ export const users = mysqlTable("users", {
 	lastSignedIn: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
 
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+
 export const votes = mysqlTable("votes", {
 	id: bigint({ mode: "number" }).autoincrement().notNull(),
 	park1Id: int().notNull(),
@@ -96,6 +120,9 @@ export const votes = mysqlTable("votes", {
 	winnerId: int().notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
+
+export type Vote = typeof votes.$inferSelect;
+export type InsertVote = typeof votes.$inferInsert;
 
 /**
  * Referrals table to track user referral relationships.
@@ -189,7 +216,7 @@ export type InsertWeeklyStreakChallenge = typeof weeklyStreakChallenges.$inferIn
  */
 export const weeklyBadges = mysqlTable("weeklyBadges", {
 	id: bigint({ mode: "number" }).autoincrement().notNull().primaryKey(),
-	weeklyChallenge: bigint({ mode: "number" }).notNull(),
+	weeklyChallenge: int().notNull(),
 	userId: int().notNull(),
 	rank: int().notNull(),
 	streakLength: int().notNull(),
@@ -208,7 +235,7 @@ export type InsertWeeklyBadge = typeof weeklyBadges.$inferInsert;
 export const weeklyNotifications = mysqlTable("weeklyNotifications", {
 	id: bigint({ mode: "number" }).autoincrement().notNull().primaryKey(),
 	userId: int().notNull(),
-	weeklyChallenge: bigint({ mode: "number" }).notNull(),
+	weeklyChallenge: int().notNull(),
 	type: varchar({ length: 50 }).notNull(),
 	title: varchar({ length: 255 }).notNull(),
 	message: text().notNull(),
