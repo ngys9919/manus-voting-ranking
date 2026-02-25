@@ -6,6 +6,7 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import { ParkDetailsModal } from "@/components/ParkDetailsModal";
 import { Badges } from "@/components/Badges";
+import { BadgesGallery } from "@/components/BadgesGallery";
 import { Challenges } from "@/components/Challenges";
 import type { Park } from "@shared/types";
 import { Loader2, Trophy, TrendingUp, Calendar } from "lucide-react";
@@ -124,14 +125,16 @@ export default function Profile() {
           </Card>
         </div>
 
-        {/* Achievements */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        {/* Badges and Achievements Gallery */}
+        <div className="mb-8">
           {achievementsLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-            </div>
+            <Card className="p-8">
+              <div className="flex justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              </div>
+            </Card>
           ) : (
-            <Badges achievements={(achievements || []).map(a => ({ ...a.achievement, unlockedAt: a.unlockedAt }))} />
+            <BadgesGallery achievements={achievements || []} isLoading={achievementsLoading} />
           )}
         </div>
 

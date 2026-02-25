@@ -64,6 +64,20 @@
       "when": 1772029325192,
       "tag": "0008_smiling_callisto",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1772029648065,
+      "tag": "0009_curved_virginia_dare",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1772030584827,
+      "tag": "0010_flowery_scrambler",
+      "breakpoints": true
     }
   ]
 }
