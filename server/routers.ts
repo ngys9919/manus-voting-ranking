@@ -28,6 +28,12 @@ import {
   awardWeeklyBadges,
   getUserWeeklyBadges,
   completeWeeklyChallenge,
+  sendTop3RankingNotifications,
+  sendChallengeStartNotifications,
+  getUserNotifications,
+  getUnreadNotificationCount,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
 } from "./db";
 
 export const appRouter = router({
@@ -249,6 +255,46 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const success = await completeWeeklyChallenge(input.challengeId);
         return success;
+      }),
+  }),
+
+  notifications: router({
+    getNotifications: protectedProcedure
+      .input(z.object({ limit: z.number().default(20) }))
+      .query(async ({ ctx, input }) => {
+        const notifications = await getUserNotifications(ctx.user.id, input.limit);
+        return notifications;
+      }),
+
+    getUnreadCount: protectedProcedure.query(async ({ ctx }) => {
+      const count = await getUnreadNotificationCount(ctx.user.id);
+      return count;
+    }),
+
+    markAsRead: protectedProcedure
+      .input(z.object({ notificationId: z.number() }))
+      .mutation(async ({ input }) => {
+        const success = await markNotificationAsRead(input.notificationId);
+        return success;
+      }),
+
+    markAllAsRead: protectedProcedure.mutation(async ({ ctx }) => {
+      const success = await markAllNotificationsAsRead(ctx.user.id);
+      return success;
+    }),
+
+    sendTop3Notifications: protectedProcedure
+      .input(z.object({ challengeId: z.number() }))
+      .mutation(async ({ input }) => {
+        const notifications = await sendTop3RankingNotifications(input.challengeId);
+        return notifications;
+      }),
+
+    sendChallengeStartNotifications: protectedProcedure
+      .input(z.object({ challengeId: z.number() }))
+      .mutation(async ({ input }) => {
+        const notifications = await sendChallengeStartNotifications(input.challengeId);
+        return notifications;
       }),
   }),
 });

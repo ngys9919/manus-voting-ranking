@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Mountain, Trophy, Clock, User } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { WeeklyChallenges } from "@/components/WeeklyChallenges";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -20,14 +21,17 @@ export default function Home() {
               <h1 className="text-3xl font-bold text-slate-900">National Park Ranker</h1>
             </div>
             {isAuthenticated && (
-              <Button
-                variant="ghost"
-                onClick={() => setLocation('/profile')}
-                className="flex items-center gap-2"
-              >
-                <User className="w-5 h-5" />
-                Profile
-              </Button>
+              <div className="flex items-center gap-2">
+                <NotificationCenter />
+                <Button
+                  variant="ghost"
+                  onClick={() => setLocation('/profile')}
+                  className="flex items-center gap-2"
+                >
+                  <User className="w-5 h-5" />
+                  Profile
+                </Button>
+              </div>
             )}
           </div>
           <p className="text-slate-600 mt-2">Vote on your favorite parks and see how they rank</p>

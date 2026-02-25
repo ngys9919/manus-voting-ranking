@@ -118,3 +118,16 @@
 - [x] Show earned weekly badges on profile
 - [x] Add weekly challenge notifications when users rank in top 3
 - [x] Implement automatic weekly challenge rotation (every Monday)
+
+
+## Weekly Notifications
+- [x] Create weeklyNotifications table to track sent notifications
+- [x] Implement notification logic for top 3 rankings
+- [x] Implement notification logic for new challenge start
+- [x] Create notification sending functions
+- [x] Add API endpoints to fetch user notifications
+- [x] Integrate notifications into weekly challenge system
+- [x] Display notification badges on UI
+- [x] Add notification dismiss/read functionality
+- [x] Create notification history view
+- [x] Write comprehensive tests for notification system

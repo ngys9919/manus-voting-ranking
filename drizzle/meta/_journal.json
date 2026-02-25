@@ -57,6 +57,13 @@
       "when": 1772028745712,
       "tag": "0007_productive_saracen",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1772029325192,
+      "tag": "0008_smiling_callisto",
+      "breakpoints": true
     }
   ]
 }

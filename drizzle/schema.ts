@@ -213,3 +213,26 @@ export const weeklyBadges = mysqlTable("weeklyBadges", {
 
 export type WeeklyBadge = typeof weeklyBadges.$inferSelect;
 export type InsertWeeklyBadge = typeof weeklyBadges.$inferInsert;
+
+
+/**
+ * Weekly Notifications table tracking notifications sent to users.
+ * Stores notifications for top 3 rankings and challenge start events.
+ */
+export const weeklyNotifications = mysqlTable("weeklyNotifications", {
+  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  weeklyChallenge: bigint("weeklyChallenge", { mode: "number" }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // 'top_3_ranking' | 'challenge_start' | 'challenge_end'
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  rank: int("rank"), // For top 3 rankings: 1, 2, or 3
+  badgeIcon: varchar("badgeIcon", { length: 50 }), // 🥇, 🥈, 🥉
+  isRead: boolean("isRead").default(false).notNull(),
+  readAt: timestamp("readAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WeeklyNotification = typeof weeklyNotifications.$inferSelect;
+export type InsertWeeklyNotification = typeof weeklyNotifications.$inferInsert;

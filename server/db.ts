@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote, achievements, userAchievements, InsertAchievement, InsertUserAchievement, challenges, userChallenges, InsertChallenge, InsertUserChallenge, userStreaks, InsertUserStreak, UserStreak, weeklyStreakChallenges, weeklyBadges, InsertWeeklyStreakChallenge, InsertWeeklyBadge, WeeklyBadge } from "../drizzle/schema";
+import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote, achievements, userAchievements, InsertAchievement, InsertUserAchievement, challenges, userChallenges, InsertChallenge, InsertUserChallenge, userStreaks, InsertUserStreak, UserStreak, weeklyStreakChallenges, weeklyBadges, InsertWeeklyStreakChallenge, InsertWeeklyBadge, WeeklyBadge, weeklyNotifications, InsertWeeklyNotification, WeeklyNotification } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 // Achievement definitions
@@ -1499,6 +1499,211 @@ export async function completeWeeklyChallenge(challengeId: number): Promise<bool
     return true;
   } catch (error) {
     console.error("[Database] Failed to complete weekly challenge:", error);
+    return false;
+  }
+}
+
+
+// Weekly Notification Functions
+
+export async function sendTop3RankingNotifications(challengeId: number): Promise<WeeklyNotification[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot send notifications: database not available");
+    return [];
+  }
+
+  try {
+    // Get top 3 badges for this challenge
+    const topBadges = await db
+      .select({
+        rank: weeklyBadges.rank,
+        userId: weeklyBadges.userId,
+        badgeIcon: weeklyBadges.badgeIcon,
+        badgeName: weeklyBadges.badgeName,
+        streakLength: weeklyBadges.streakLength,
+      })
+      .from(weeklyBadges)
+      .where(eq(weeklyBadges.weeklyChallenge, BigInt(challengeId)) as any)
+      .orderBy(weeklyBadges.rank);
+
+    const rankLabels = {
+      1: "🥇 You're the Weekly Champion!",
+      2: "🥈 You're the Weekly Runner-Up!",
+      3: "🥉 You earned a Weekly Third Place Badge!",
+    };
+
+    const notifications: WeeklyNotification[] = [];
+
+    for (const badge of topBadges) {
+      const rankLabel = rankLabels[badge.rank as keyof typeof rankLabels] || "You earned a weekly badge!";
+      
+      const notification = await db.insert(weeklyNotifications).values({
+        userId: badge.userId,
+        weeklyChallenge: BigInt(challengeId),
+        type: "top_3_ranking",
+        title: rankLabel,
+        message: `Congratulations! Your ${badge.streakLength}-day voting streak earned you a ${badge.badgeName} badge. Keep it up!`,
+        rank: badge.rank,
+        badgeIcon: badge.badgeIcon,
+        isRead: false,
+      });
+
+      notifications.push({
+        id: BigInt(0),
+        userId: badge.userId,
+        weeklyChallenge: BigInt(challengeId),
+        type: "top_3_ranking",
+        title: rankLabel,
+        message: `Congratulations! Your ${badge.streakLength}-day voting streak earned you a ${badge.badgeName} badge. Keep it up!`,
+        rank: badge.rank,
+        badgeIcon: badge.badgeIcon,
+        isRead: false,
+        readAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+
+    return notifications;
+  } catch (error) {
+    console.error("[Database] Failed to send top 3 notifications:", error);
+    return [];
+  }
+}
+
+export async function sendChallengeStartNotifications(challengeId: number): Promise<WeeklyNotification[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot send notifications: database not available");
+    return [];
+  }
+
+  try {
+    // Get all active users
+    const allUsers = await db.select({ id: users.id }).from(users).limit(1000);
+
+    const notifications: WeeklyNotification[] = [];
+
+    for (const user of allUsers) {
+      const notification = await db.insert(weeklyNotifications).values({
+        userId: user.id,
+        weeklyChallenge: BigInt(challengeId),
+        type: "challenge_start",
+        title: "🏆 New Weekly Streak Challenge Started!",
+        message: "A new weekly challenge has begun! Vote daily to build your streak and compete for top 3 badges.",
+        isRead: false,
+      });
+
+      notifications.push({
+        id: BigInt(0),
+        userId: user.id,
+        weeklyChallenge: BigInt(challengeId),
+        type: "challenge_start",
+        title: "🏆 New Weekly Streak Challenge Started!",
+        message: "A new weekly challenge has begun! Vote daily to build your streak and compete for top 3 badges.",
+        rank: null,
+        badgeIcon: null,
+        isRead: false,
+        readAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+
+    return notifications;
+  } catch (error) {
+    console.error("[Database] Failed to send challenge start notifications:", error);
+    return [];
+  }
+}
+
+export async function getUserNotifications(userId: number, limit: number = 20): Promise<WeeklyNotification[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get notifications: database not available");
+    return [];
+  }
+
+  try {
+    const notifications = await db
+      .select()
+      .from(weeklyNotifications)
+      .where(eq(weeklyNotifications.userId, userId) as any)
+      .orderBy(desc(weeklyNotifications.createdAt))
+      .limit(limit);
+
+    return notifications;
+  } catch (error) {
+    console.error("[Database] Failed to get user notifications:", error);
+    return [];
+  }
+}
+
+export async function getUnreadNotificationCount(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get notification count: database not available");
+    return 0;
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(weeklyNotifications)
+      .where(eq(weeklyNotifications.userId, userId) as any);
+
+    return result.length;
+  } catch (error) {
+    console.error("[Database] Failed to get unread notification count:", error);
+    return 0;
+  }
+}
+
+export async function markNotificationAsRead(notificationId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot mark notification as read: database not available");
+    return false;
+  }
+
+  try {
+    await db
+      .update(weeklyNotifications)
+      .set({
+        isRead: true,
+        readAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(weeklyNotifications.id, BigInt(notificationId)) as any);
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to mark notification as read:", error);
+    return false;
+  }
+}
+
+export async function markAllNotificationsAsRead(userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot mark notifications as read: database not available");
+    return false;
+  }
+
+  try {
+    await db
+      .update(weeklyNotifications)
+      .set({
+        isRead: true,
+        readAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(weeklyNotifications.userId, userId) as any);
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to mark all notifications as read:", error);
     return false;
   }
 }
