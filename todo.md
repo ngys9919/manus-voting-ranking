@@ -85,3 +85,12 @@
 - [x] Display progress bars and completion status for each challenge
 - [x] Show completed challenges gallery
 - [x] Auto-seed challenges on server startup
+
+
+## Challenge Notifications
+- [x] Add challenge completion detection logic to identify when users complete challenges
+- [x] Create notification helper functions to determine milestone thresholds (75%, 90%, 100%)
+- [x] Integrate toast notifications into Vote page for challenge progress updates
+- [x] Display "Almost there!" notifications at 75% progress
+- [x] Display "Nearly done!" notifications at 90% progress
+- [x] Display celebration notifications when challenges are completed

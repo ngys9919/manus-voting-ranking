@@ -960,3 +960,124 @@ export async function getCompletedChallenges(userId: number) {
     throw error;
   }
 }
+
+
+// Challenge Notification Helper Functions
+
+export interface ChallengeNotification {
+  type: 'milestone' | 'completion';
+  challengeName: string;
+  challengeCode: string;
+  message: string;
+  percentage: number;
+  icon: string;
+}
+
+export async function getChallengeNotifications(userId: number, challengeId: number): Promise<ChallengeNotification[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get challenge notifications: database not available");
+    return [];
+  }
+
+  try {
+    const notifications: ChallengeNotification[] = [];
+
+    // Get user challenge progress
+    const userChallenge = await db
+      .select()
+      .from(userChallenges)
+      .where(
+        eq(userChallenges.userId, userId) &&
+        eq(userChallenges.challengeId, challengeId)
+      )
+      .limit(1);
+
+    if (userChallenge.length === 0) {
+      return [];
+    }
+
+    // Get challenge details
+    const challenge = await db
+      .select()
+      .from(challenges)
+      .where(eq(challenges.id, challengeId))
+      .limit(1);
+
+    if (challenge.length === 0) {
+      return [];
+    }
+
+    const progress = userChallenge[0].progress;
+    const target = challenge[0].targetValue;
+    const percentage = Math.round((progress / target) * 100);
+
+    // Check for completion
+    if (userChallenge[0].isCompleted && percentage >= 100) {
+      notifications.push({
+        type: 'completion',
+        challengeName: challenge[0].name,
+        challengeCode: challenge[0].code,
+        message: `🎉 Challenge Completed: ${challenge[0].name}!`,
+        percentage: 100,
+        icon: '🏆',
+      });
+    }
+    // Check for 90% milestone
+    else if (percentage >= 90 && percentage < 100) {
+      notifications.push({
+        type: 'milestone',
+        challengeName: challenge[0].name,
+        challengeCode: challenge[0].code,
+        message: `Nearly done! ${progress}/${target} - Just ${target - progress} more to go!`,
+        percentage,
+        icon: '🔥',
+      });
+    }
+    // Check for 75% milestone
+    else if (percentage >= 75 && percentage < 90) {
+      notifications.push({
+        type: 'milestone',
+        challengeName: challenge[0].name,
+        challengeCode: challenge[0].code,
+        message: `Almost there! You're ${percentage}% complete on ${challenge[0].name}!`,
+        percentage,
+        icon: '⚡',
+      });
+    }
+
+    return notifications;
+  } catch (error) {
+    console.error("[Database] Failed to get challenge notifications:", error);
+    return [];
+  }
+}
+
+export async function getAllChallengeNotifications(userId: number): Promise<ChallengeNotification[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get all challenge notifications: database not available");
+    return [];
+  }
+
+  try {
+    const allNotifications: ChallengeNotification[] = [];
+
+    // Get all user challenges
+    const userChallenges_ = await db
+      .select()
+      .from(userChallenges)
+      .where(eq(userChallenges.userId, userId));
+
+    // Get notifications for each challenge
+    for (const userChallenge of userChallenges_) {
+      const notifications = await getChallengeNotifications(userId, userChallenge.challengeId);
+      allNotifications.push(...notifications);
+    }
+
+    return allNotifications;
+  } catch (error) {
+    console.error("[Database] Failed to get all challenge notifications:", error);
+    return [];
+  }
+}

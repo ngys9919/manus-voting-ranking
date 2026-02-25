@@ -19,6 +19,8 @@ import {
   getUserChallengeProgress,
   updateChallengeProgress,
   getCompletedChallenges,
+  getChallengeNotifications,
+  getAllChallengeNotifications,
 } from "./db";
 
 export const appRouter = router({
@@ -173,6 +175,25 @@ export const appRouter = router({
         );
         return result;
       }),
+
+    getNotifications: protectedProcedure
+      .input(
+        z.object({
+          challengeId: z.number(),
+        })
+      )
+      .query(async ({ input, ctx }) => {
+        const notifications = await getChallengeNotifications(
+          ctx.user.id,
+          input.challengeId
+        );
+        return notifications;
+      }),
+
+    getAllNotifications: protectedProcedure.query(async ({ ctx }) => {
+      const notifications = await getAllChallengeNotifications(ctx.user.id);
+      return notifications;
+    }),
   }),
 });
 
