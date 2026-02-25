@@ -8,6 +8,7 @@ import { ParkDetailsModal } from "@/components/ParkDetailsModal";
 import { Badges } from "@/components/Badges";
 import { Challenges } from "@/components/Challenges";
 import { PushNotificationToggle } from "@/components/PushNotificationToggle";
+import { AchievementProgress } from "@/components/AchievementProgress";
 import type { Park } from "@shared/types";
 import { Loader2, Trophy, TrendingUp, Calendar } from "lucide-react";
 
@@ -139,6 +140,12 @@ export default function Profile() {
           ) : (
             <Badges achievements={(achievements || []).map(a => ({ ...a.achievement, unlockedAt: a.unlockedAt }))} />
           )}
+        </div>
+
+        {/* Achievement Progress */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-2xl font-bold mb-6">Next Achievements</h2>
+          <AchievementProgress />
         </div>
 
         {/* Challenges */}

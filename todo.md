@@ -144,3 +144,15 @@
 - [x] Handle subscription errors and failures
 - [x] Test push notifications across browsers
 - [x] Write comprehensive tests for push notification system
+
+
+## Achievement Progress Indicators
+- [x] Create achievement progress calculation functions
+- [x] Add API endpoints to fetch achievement progress
+- [x] Build AchievementProgress component with progress bars
+- [x] Display locked achievements with progress indicators
+- [x] Show percentage and count (e.g., "8/10 votes")
+- [x] Add visual styling for different progress levels
+- [x] Integrate progress bars into Profile page
+- [x] Add tooltips showing achievement requirements
+- [x] Write comprehensive tests for progress logic

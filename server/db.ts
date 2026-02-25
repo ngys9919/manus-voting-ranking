@@ -1846,3 +1846,132 @@ export async function getActiveSubscriptionsForNotification(
     return [];
   }
 }
+
+
+// Achievement Progress Functions
+
+export interface AchievementProgress {
+  code: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  isUnlocked: boolean;
+  currentProgress: number;
+  targetValue: number;
+  progressPercentage: number;
+  unlockedAt?: Date;
+}
+
+export async function getAchievementProgress(userId: number): Promise<AchievementProgress[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get achievement progress: database not available");
+    return [];
+  }
+
+  try {
+    // Get user's vote count
+    const voteCountResult = await db
+      .select()
+      .from(userVotes)
+      .where(eq(userVotes.userId, userId) as any);
+    const voteCount = voteCountResult.length;
+
+    // Get user's earned achievements
+    const earnedAchievements = await db
+      .select()
+      .from(userAchievements)
+      .where(eq(userAchievements.userId, userId) as any);
+
+    const earnedAchievementIds = new Set(earnedAchievements.map((a) => a.achievementId));
+
+    // Get user's current streak
+    const streakResult = await db
+      .select()
+      .from(userStreaks)
+      .where(eq(userStreaks.userId, userId) as any)
+      .orderBy(desc(userStreaks.currentStreak))
+      .limit(1);
+
+    const currentStreak = streakResult.length > 0 ? streakResult[0].currentStreak : 0;
+
+    // Calculate progress for each achievement
+    const progressList: AchievementProgress[] = ACHIEVEMENT_DEFINITIONS.map((def) => {
+      let currentProgress = 0;
+      let targetValue = 1;
+
+      // Calculate progress based on achievement type
+      if (def.code === 'first_vote') {
+        currentProgress = voteCount > 0 ? 1 : 0;
+        targetValue = 1;
+      } else if (def.code === 'ten_votes') {
+        currentProgress = Math.min(voteCount, 10);
+        targetValue = 10;
+      } else if (def.code === 'fifty_votes') {
+        currentProgress = Math.min(voteCount, 50);
+        targetValue = 50;
+      } else if (def.code === 'hundred_votes') {
+        currentProgress = Math.min(voteCount, 100);
+        targetValue = 100;
+      } else if (def.code === 'three_day_streak') {
+        currentProgress = Math.min(currentStreak, 3);
+        targetValue = 3;
+      } else if (def.code === 'seven_day_streak') {
+        currentProgress = Math.min(currentStreak, 7);
+        targetValue = 7;
+      } else if (def.code === 'fourteen_day_streak') {
+        currentProgress = Math.min(currentStreak, 14);
+        targetValue = 14;
+      } else if (def.code === 'thirty_day_streak') {
+        currentProgress = Math.min(currentStreak, 30);
+        targetValue = 30;
+      } else {
+        // For favorite park achievements, progress is binary
+        currentProgress = 0;
+        targetValue = 1;
+      }
+
+      const isUnlocked = false;
+      const progressPercentage = targetValue > 0 ? (currentProgress / targetValue) * 100 : 0;
+
+      // Find unlock date if achievement is earned
+      const earnedAchievement = earnedAchievements.find((a) => {
+        // Match by achievement name since we don't have a direct code reference
+        return a.unlockedAt !== undefined;
+      });
+
+      return {
+        code: def.code,
+        name: def.name,
+        description: def.description,
+        icon: def.icon,
+        color: def.color,
+        isUnlocked,
+        currentProgress,
+        targetValue,
+        progressPercentage: Math.round(progressPercentage),
+        unlockedAt: earnedAchievement?.unlockedAt,
+      };
+    });
+
+    return progressList;
+  } catch (error) {
+    console.error("[Database] Failed to get achievement progress:", error);
+    return [];
+  }
+}
+
+export async function getLockedAchievements(userId: number): Promise<AchievementProgress[]> {
+  const allProgress = await getAchievementProgress(userId);
+  return allProgress.filter((a) => !a.isUnlocked).sort((a, b) => b.progressPercentage - a.progressPercentage);
+}
+
+export async function getNextAchievements(userId: number, limit: number = 3): Promise<AchievementProgress[]> {
+  const lockedAchievements = await getLockedAchievements(userId);
+  
+  // Sort by progress percentage descending (closest to unlocking first)
+  return lockedAchievements
+    .sort((a, b) => b.progressPercentage - a.progressPercentage)
+    .slice(0, limit);
+}

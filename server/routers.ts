@@ -37,6 +37,9 @@ import {
   savePushSubscription,
   getUserPushSubscriptions,
   removePushSubscription,
+  getAchievementProgress,
+  getLockedAchievements,
+  getNextAchievements,
 } from "./db";
 
 export const appRouter = router({
@@ -158,6 +161,23 @@ export const appRouter = router({
       const unlockedAchievements = await checkAndUnlockAchievements(ctx.user.id);
       return unlockedAchievements;
     }),
+
+    getProgress: protectedProcedure.query(async ({ ctx }) => {
+      const progress = await getAchievementProgress(ctx.user.id);
+      return progress;
+    }),
+
+    getLocked: protectedProcedure.query(async ({ ctx }) => {
+      const locked = await getLockedAchievements(ctx.user.id);
+      return locked;
+    }),
+
+    getNext: protectedProcedure
+      .input(z.object({ limit: z.number().default(3) }))
+      .query(async ({ ctx, input }) => {
+        const next = await getNextAchievements(ctx.user.id, input.limit);
+        return next;
+      }),
   }),
 
   challenges: router({
