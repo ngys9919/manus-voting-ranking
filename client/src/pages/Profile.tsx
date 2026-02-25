@@ -7,6 +7,7 @@ import { useState } from "react";
 import { ParkDetailsModal } from "@/components/ParkDetailsModal";
 import { Badges } from "@/components/Badges";
 import { Challenges } from "@/components/Challenges";
+import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import type { Park } from "@shared/types";
 import { Loader2, Trophy, TrendingUp, Calendar } from "lucide-react";
 
@@ -71,8 +72,13 @@ export default function Profile() {
 
         {/* User Info */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h1 className="text-3xl font-bold mb-2">{user?.name || "User"}</h1>
-          <p className="text-gray-600">{user?.email}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">{user?.name || "User"}</h1>
+              <p className="text-gray-600">{user?.email}</p>
+            </div>
+            <PushNotificationToggle />
+          </div>
         </div>
 
         {/* Statistics Cards */}

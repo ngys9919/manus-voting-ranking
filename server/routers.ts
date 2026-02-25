@@ -34,6 +34,9 @@ import {
   getUnreadNotificationCount,
   markNotificationAsRead,
   markAllNotificationsAsRead,
+  savePushSubscription,
+  getUserPushSubscriptions,
+  removePushSubscription,
 } from "./db";
 
 export const appRouter = router({
@@ -295,6 +298,36 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const notifications = await sendChallengeStartNotifications(input.challengeId);
         return notifications;
+      }),
+
+    savePushSubscription: protectedProcedure
+      .input(z.object({
+        subscription: z.object({
+          endpoint: z.string(),
+          keys: z.object({
+            auth: z.string(),
+            p256dh: z.string(),
+          }),
+        }),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const subscription = await savePushSubscription(
+          ctx.user.id,
+          input.subscription
+        );
+        return subscription;
+      }),
+
+    getPushSubscriptions: protectedProcedure.query(async ({ ctx }) => {
+      const subscriptions = await getUserPushSubscriptions(ctx.user.id);
+      return subscriptions;
+    }),
+
+    removePushSubscription: protectedProcedure
+      .input(z.object({ endpoint: z.string() }))
+      .mutation(async ({ input }) => {
+        const success = await removePushSubscription(input.endpoint);
+        return success;
       }),
   }),
 });

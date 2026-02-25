@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote, achievements, userAchievements, InsertAchievement, InsertUserAchievement, challenges, userChallenges, InsertChallenge, InsertUserChallenge, userStreaks, InsertUserStreak, UserStreak, weeklyStreakChallenges, weeklyBadges, InsertWeeklyStreakChallenge, InsertWeeklyBadge, WeeklyBadge, weeklyNotifications, InsertWeeklyNotification, WeeklyNotification } from "../drizzle/schema";
+import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote, achievements, userAchievements, InsertAchievement, InsertUserAchievement, challenges, userChallenges, InsertChallenge, InsertUserChallenge, userStreaks, InsertUserStreak, UserStreak, weeklyStreakChallenges, weeklyBadges, InsertWeeklyStreakChallenge, InsertWeeklyBadge, WeeklyBadge, weeklyNotifications, InsertWeeklyNotification, WeeklyNotification, pushSubscriptions, InsertPushSubscription, PushSubscription } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 // Achievement definitions
@@ -1705,5 +1705,144 @@ export async function markAllNotificationsAsRead(userId: number): Promise<boolea
   } catch (error) {
     console.error("[Database] Failed to mark all notifications as read:", error);
     return false;
+  }
+}
+
+
+// Push Subscription Functions
+
+export async function savePushSubscription(
+  userId: number,
+  subscription: {
+    endpoint: string;
+    keys: {
+      auth: string;
+      p256dh: string;
+    };
+  }
+): Promise<PushSubscription | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot save push subscription: database not available");
+    return null;
+  }
+
+  try {
+    // Check if subscription already exists
+    const existing = await db
+      .select()
+      .from(pushSubscriptions)
+      .where(eq(pushSubscriptions.endpoint, subscription.endpoint) as any)
+      .limit(1);
+
+    if (existing.length > 0) {
+      // Update existing subscription
+      await db
+        .update(pushSubscriptions)
+        .set({
+          userId,
+          auth: subscription.keys.auth,
+          p256dh: subscription.keys.p256dh,
+          isActive: true,
+          updatedAt: new Date(),
+        })
+        .where(eq(pushSubscriptions.endpoint, subscription.endpoint) as any);
+
+      return existing[0];
+    }
+
+    // Insert new subscription
+    const result = await db.insert(pushSubscriptions).values({
+      userId,
+      endpoint: subscription.endpoint,
+      auth: subscription.keys.auth,
+      p256dh: subscription.keys.p256dh,
+      isActive: true,
+    });
+
+    return {
+      id: 0 as any,
+      userId,
+      endpoint: subscription.endpoint,
+      auth: subscription.keys.auth,
+      p256dh: subscription.keys.p256dh,
+      userAgent: null,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  } catch (error) {
+    console.error("[Database] Failed to save push subscription:", error);
+    return null;
+  }
+}
+
+export async function getUserPushSubscriptions(userId: number): Promise<PushSubscription[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get push subscriptions: database not available");
+    return [];
+  }
+
+  try {
+    const subscriptions = await db
+      .select()
+      .from(pushSubscriptions)
+      .where(eq(pushSubscriptions.userId, userId) as any);
+
+    return subscriptions;
+  } catch (error) {
+    console.error("[Database] Failed to get push subscriptions:", error);
+    return [];
+  }
+}
+
+export async function removePushSubscription(endpoint: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot remove push subscription: database not available");
+    return false;
+  }
+
+  try {
+    await db
+      .update(pushSubscriptions)
+      .set({
+        isActive: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(pushSubscriptions.endpoint, endpoint) as any);
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to remove push subscription:", error);
+    return false;
+  }
+}
+
+export async function getActiveSubscriptionsForNotification(
+  userIds: number[]
+): Promise<PushSubscription[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get active subscriptions: database not available");
+    return [];
+  }
+
+  try {
+    if (userIds.length === 0) return [];
+    
+    const subscriptions = await db
+      .select()
+      .from(pushSubscriptions)
+      .where(
+        eq(pushSubscriptions.isActive, true) as any
+      )
+      .limit(1000);
+
+    return subscriptions.filter((sub) => userIds.includes(sub.userId));
+  } catch (error) {
+    console.error("[Database] Failed to get active subscriptions:", error);
+    return [];
   }
 }

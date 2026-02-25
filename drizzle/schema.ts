@@ -236,3 +236,23 @@ export const weeklyNotifications = mysqlTable("weeklyNotifications", {
 
 export type WeeklyNotification = typeof weeklyNotifications.$inferSelect;
 export type InsertWeeklyNotification = typeof weeklyNotifications.$inferInsert;
+
+
+/**
+ * Push Subscriptions table tracking browser push notification subscriptions.
+ * Stores subscription endpoints and keys for sending web push notifications.
+ */
+export const pushSubscriptions = mysqlTable("pushSubscriptions", {
+  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  endpoint: text("endpoint").notNull(),
+  auth: varchar("auth", { length: 255 }).notNull(),
+  p256dh: varchar("p256dh", { length: 255 }).notNull(),
+  userAgent: varchar("userAgent", { length: 500 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;

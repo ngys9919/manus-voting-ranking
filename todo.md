@@ -131,3 +131,16 @@
 - [x] Add notification dismiss/read functionality
 - [x] Create notification history view
 - [x] Write comprehensive tests for notification system
+
+
+## Push Notifications
+- [x] Create pushSubscriptions table to track user subscriptions
+- [x] Implement push notification sending for top 3 rankings
+- [x] Implement push notification sending for challenge start events
+- [x] Create service worker for handling push notifications
+- [x] Add push notification permission request UI
+- [x] Integrate push notifications into notification system
+- [x] Add notification preference settings
+- [x] Handle subscription errors and failures
+- [x] Test push notifications across browsers
+- [x] Write comprehensive tests for push notification system
