@@ -21,6 +21,9 @@ import {
   getCompletedChallenges,
   getChallengeNotifications,
   getAllChallengeNotifications,
+  updateVotingStreak,
+  getUserStreak,
+  getStreakLeaderboard,
 } from "./db";
 
 export const appRouter = router({
@@ -194,6 +197,29 @@ export const appRouter = router({
       const notifications = await getAllChallengeNotifications(ctx.user.id);
       return notifications;
     }),
+  }),
+
+  streaks: router({
+    updateStreak: protectedProcedure.mutation(async ({ ctx }) => {
+      const notification = await updateVotingStreak(ctx.user.id);
+      return notification;
+    }),
+
+    getUserStreak: protectedProcedure.query(async ({ ctx }) => {
+      const streak = await getUserStreak(ctx.user.id);
+      return streak;
+    }),
+
+    getLeaderboard: publicProcedure
+      .input(
+        z.object({
+          limit: z.number().min(1).max(100).default(10),
+        })
+      )
+      .query(async ({ input }) => {
+        const leaderboard = await getStreakLeaderboard(input.limit);
+        return leaderboard;
+      }),
   }),
 });
 

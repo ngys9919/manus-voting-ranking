@@ -94,3 +94,14 @@
 - [x] Display "Almost there!" notifications at 75% progress
 - [x] Display "Nearly done!" notifications at 90% progress
 - [x] Display celebration notifications when challenges are completed
+
+
+## Voting Streak Notifications
+- [x] Add userStreaks table to track consecutive voting days
+- [x] Create streak calculation logic to detect consecutive days
+- [x] Implement streak milestone notifications (3, 7, 14, 30 days)
+- [x] Add streak display to user profile
+- [x] Create streak reset logic when user misses a day
+- [x] Integrate streak notifications into Vote page
+- [x] Add streak badges to achievements system
+- [x] Write comprehensive tests for streak logic

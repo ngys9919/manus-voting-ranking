@@ -23,6 +23,7 @@ export default function Vote() {
   const matchupQuery = trpc.parks.getMatchup.useQuery();
   const activeChallengesQuery = trpc.challenges.getActive.useQuery();
   const updateChallengeMutation = trpc.challenges.updateProgress.useMutation();
+  const updateStreakMutation = trpc.streaks.updateStreak.useMutation();
   const submitVoteMutation = trpc.parks.submitVote.useMutation();
   const checkAchievementsMutation = trpc.achievements.checkAndUnlock.useMutation();
   const utils = trpc.useUtils();
@@ -51,6 +52,19 @@ export default function Vote() {
         }
       } catch (error) {
         console.error("Failed to update challenge progress", error);
+      }
+      
+      // Update voting streak
+      try {
+        const streakNotification = await updateStreakMutation.mutateAsync();
+        if (streakNotification) {
+          toast.success(streakNotification.message, {
+            icon: streakNotification.icon,
+            duration: 5000,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to update voting streak", error);
       }
       
       // Get challenge notifications

@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, bigint, boolean } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, bigint, boolean, date } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -159,3 +159,21 @@ export const userChallenges = mysqlTable("userChallenges", {
 
 export type UserChallenge = typeof userChallenges.$inferSelect;
 export type InsertUserChallenge = typeof userChallenges.$inferInsert;
+
+/**
+ * User Streaks table tracking consecutive voting days.
+ * Maintains current streak and longest streak for each user.
+ */
+export const userStreaks = mysqlTable("userStreaks", {
+  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  currentStreak: int("currentStreak").default(0).notNull(),
+  longestStreak: int("longestStreak").default(0).notNull(),
+  lastVoteDate: timestamp("lastVoteDate"),
+  streakStartDate: timestamp("streakStartDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserStreak = typeof userStreaks.$inferSelect;
+export type InsertUserStreak = typeof userStreaks.$inferInsert;

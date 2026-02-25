@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote, achievements, userAchievements, InsertAchievement, InsertUserAchievement, challenges, userChallenges, InsertChallenge, InsertUserChallenge } from "../drizzle/schema";
+import { InsertUser, users, parks, votes, InsertPark, parkEloHistory, InsertParkEloHistory, userVotes, InsertUserVote, achievements, userAchievements, InsertAchievement, InsertUserAchievement, challenges, userChallenges, InsertChallenge, InsertUserChallenge, userStreaks, InsertUserStreak, UserStreak } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 // Achievement definitions
@@ -53,6 +53,34 @@ export const ACHIEVEMENT_DEFINITIONS = [
     description: 'Your favorite park reaches #1',
     icon: 'Heart',
     color: 'red',
+  },
+  {
+    code: 'three_day_streak',
+    name: '3-Day Streak',
+    description: 'Vote 3 consecutive days',
+    icon: 'Flame',
+    color: 'orange',
+  },
+  {
+    code: 'seven_day_streak',
+    name: '7-Day Streak',
+    description: 'Vote 7 consecutive days',
+    icon: 'Star',
+    color: 'yellow',
+  },
+  {
+    code: 'fourteen_day_streak',
+    name: '14-Day Streak',
+    description: 'Vote 14 consecutive days',
+    icon: 'Zap',
+    color: 'cyan',
+  },
+  {
+    code: 'thirty_day_streak',
+    name: '30-Day Streak',
+    description: 'Vote 30 consecutive days',
+    icon: 'Crown',
+    color: 'purple',
   },
 ];
 
@@ -1078,6 +1106,172 @@ export async function getAllChallengeNotifications(userId: number): Promise<Chal
     return allNotifications;
   } catch (error) {
     console.error("[Database] Failed to get all challenge notifications:", error);
+    return [];
+  }
+}
+
+
+// Voting Streak Functions
+
+export interface StreakNotification {
+  type: 'streak_milestone' | 'streak_broken';
+  message: string;
+  icon: string;
+  streakDays: number;
+}
+
+export async function updateVotingStreak(userId: number): Promise<StreakNotification | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update voting streak: database not available");
+    return null;
+  }
+
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get or create user streak record
+    let userStreak = await db
+      .select()
+      .from(userStreaks)
+      .where(eq(userStreaks.userId, userId))
+      .limit(1);
+
+    if (userStreak.length === 0) {
+      // Create new streak record
+      await db.insert(userStreaks).values({
+        userId,
+        currentStreak: 1,
+        longestStreak: 1,
+        lastVoteDate: new Date(),
+        streakStartDate: new Date(),
+      });
+      return null;
+    }
+
+    const streak = userStreak[0];
+    const lastVoteDate = streak.lastVoteDate ? new Date(streak.lastVoteDate) : null;
+    lastVoteDate?.setHours(0, 0, 0, 0);
+
+    let notification: StreakNotification | null = null;
+    let newStreak = streak.currentStreak;
+    let newLongestStreak = streak.longestStreak;
+
+    // Check if vote is on a new day
+    if (!lastVoteDate || lastVoteDate.getTime() < today.getTime()) {
+      // Check if streak should continue or reset
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      if (lastVoteDate && lastVoteDate.getTime() === yesterday.getTime()) {
+        // Continue streak
+        newStreak = streak.currentStreak + 1;
+      } else if (!lastVoteDate || lastVoteDate.getTime() < yesterday.getTime()) {
+        // Streak broken, start new one
+        newStreak = 1;
+      }
+
+      // Update longest streak if current exceeds it
+      if (newStreak > streak.longestStreak) {
+        newLongestStreak = newStreak;
+      }
+
+      // Check for milestone notifications
+      if (newStreak === 3) {
+        notification = {
+          type: 'streak_milestone',
+          message: '🔥 3-Day Voting Streak! Keep it up!',
+          icon: '🔥',
+          streakDays: 3,
+        };
+      } else if (newStreak === 7) {
+        notification = {
+          type: 'streak_milestone',
+          message: '⭐ 7-Day Voting Streak! You\'re on fire!',
+          icon: '⭐',
+          streakDays: 7,
+        };
+      } else if (newStreak === 14) {
+        notification = {
+          type: 'streak_milestone',
+          message: '💎 14-Day Voting Streak! Incredible dedication!',
+          icon: '💎',
+          streakDays: 14,
+        };
+      } else if (newStreak === 30) {
+        notification = {
+          type: 'streak_milestone',
+          message: '👑 30-Day Voting Streak! You\'re a legend!',
+          icon: '👑',
+          streakDays: 30,
+        };
+      }
+
+      // Update streak record
+      await db
+        .update(userStreaks)
+        .set({
+          currentStreak: newStreak,
+          longestStreak: newLongestStreak,
+          lastVoteDate: new Date(),
+          streakStartDate: newStreak === 1 ? new Date() : streak.streakStartDate,
+          updatedAt: new Date(),
+        })
+        .where(eq(userStreaks.userId, userId));
+    }
+
+    return notification;
+  } catch (error) {
+    console.error("[Database] Failed to update voting streak:", error);
+    return null;
+  }
+}
+
+export async function getUserStreak(userId: number): Promise<UserStreak | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user streak: database not available");
+    return null;
+  }
+
+  try {
+    const userStreak = await db
+      .select()
+      .from(userStreaks)
+      .where(eq(userStreaks.userId, userId))
+      .limit(1);
+
+    return userStreak.length > 0 ? userStreak[0] : null;
+  } catch (error) {
+    console.error("[Database] Failed to get user streak:", error);
+    return null;
+  }
+}
+
+export async function getStreakLeaderboard(limit: number = 10) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get streak leaderboard: database not available");
+    return [];
+  }
+
+  try {
+    const leaderboard = await db
+      .select({
+        userId: userStreaks.userId,
+        currentStreak: userStreaks.currentStreak,
+        longestStreak: userStreaks.longestStreak,
+        userName: users.name,
+      })
+      .from(userStreaks)
+      .innerJoin(users, eq(userStreaks.userId, users.id))
+      .orderBy(desc(userStreaks.currentStreak))
+      .limit(limit);
+
+    return leaderboard;
+  } catch (error) {
+    console.error("[Database] Failed to get streak leaderboard:", error);
     return [];
   }
 }
