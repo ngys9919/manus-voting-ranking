@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE users ADD COLUMN displayName varchar(255) AFTER role; ALTER TABLE users ADD COLUMN avatarUrl text AFTER displayName;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2U7vJ5sJRPnyws9.33a21dff6b44 --database 43WewEH4mNQYa4TcbeLn4r --execute ALTER TABLE users ADD COLUMN displayName varchar(255) AFTER role; ALTER TABLE users ADD COLUMN avatarUrl text AFTER displayName;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2546
+}

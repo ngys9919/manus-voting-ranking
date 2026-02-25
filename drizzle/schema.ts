@@ -1,296 +1,224 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, bigint, boolean, date } from "drizzle-orm/mysql-core";
+import { mysqlTable, int, varchar, text, timestamp, bigint, decimal, mysqlEnum, tinyint } from "drizzle-orm/mysql-core"
+import { sql } from "drizzle-orm"
 
-/**
- * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
- */
-export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
-  id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
-  name: text("name"),
-  email: varchar("email", { length: 320 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  displayName: varchar("displayName", { length: 255 }),
-  avatarUrl: text("avatarUrl"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
-});
-
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
-
-/**
- * National Parks table for the ranking system.
- * Stores park information and their current ELO rating.
- */
-export const parks = mysqlTable("parks", {
-  id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 255 }).notNull().unique(),
-  location: varchar("location", { length: 255 }).notNull(),
-  imageUrl: text("imageUrl").notNull(),
-  eloRating: decimal("eloRating", { precision: 10, scale: 2 }).default("1500").notNull(),
-  voteCount: int("voteCount").default(0).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type Park = typeof parks.$inferSelect;
-export type InsertPark = typeof parks.$inferInsert;
-
-/**
- * Votes table to record all matchup results.
- * Tracks which park won in each head-to-head comparison.
- */
-export const votes = mysqlTable("votes", {
-  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
-  park1Id: int("park1Id").notNull(),
-  park2Id: int("park2Id").notNull(),
-  winnerId: int("winnerId").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type Vote = typeof votes.$inferSelect;
-export type InsertVote = typeof votes.$inferInsert;
-
-/**
- * Park ELO History table to track rating changes over time.
- * Records each ELO rating change for visualization and analysis.
- */
-export const parkEloHistory = mysqlTable("parkEloHistory", {
-  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
-  parkId: int("parkId").notNull(),
-  eloRating: decimal("eloRating", { precision: 10, scale: 2 }).notNull(),
-  voteId: bigint("voteId", { mode: "number" }).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type ParkEloHistory = typeof parkEloHistory.$inferSelect;
-export type InsertParkEloHistory = typeof parkEloHistory.$inferInsert;
-
-/**
- * User Votes table to track individual user voting history.
- * Records which user voted for which park in each matchup.
- */
-export const userVotes = mysqlTable("userVotes", {
-  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
-  voteId: bigint("voteId", { mode: "number" }).notNull(),
-  parkVotedFor: int("parkVotedFor").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type UserVote = typeof userVotes.$inferSelect;
-export type InsertUserVote = typeof userVotes.$inferInsert;
-
-/**
- * Achievements table defining all available achievements in the system.
- * Contains metadata about each achievement type.
- */
 export const achievements = mysqlTable("achievements", {
-  id: int("id").autoincrement().primaryKey(),
-  code: varchar("code", { length: 50 }).notNull().unique(),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description").notNull(),
-  icon: varchar("icon", { length: 50 }).notNull(),
-  color: varchar("color", { length: 20 }).default("blue").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+	id: int().autoincrement().notNull(),
+	code: varchar({ length: 50 }).notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	description: text().notNull(),
+	icon: varchar({ length: 50 }).notNull(),
+	color: varchar({ length: 20 }).default('blue').notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
 
-export type Achievement = typeof achievements.$inferSelect;
-export type InsertAchievement = typeof achievements.$inferInsert;
-
-/**
- * User Achievements table tracking which achievements each user has earned.
- * Records when a user unlocked an achievement.
- */
-export const userAchievements = mysqlTable("userAchievements", {
-  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
-  achievementId: int("achievementId").notNull(),
-  unlockedAt: timestamp("unlockedAt").defaultNow().notNull(),
-});
-
-export type UserAchievement = typeof userAchievements.$inferSelect;
-export type InsertUserAchievement = typeof userAchievements.$inferInsert;
-
-
-/**
- * Challenges table defining seasonal and monthly challenges.
- * Tracks challenge metadata, time periods, and requirements.
- */
 export const challenges = mysqlTable("challenges", {
-  id: int("id").autoincrement().primaryKey(),
-  code: varchar("code", { length: 50 }).notNull().unique(),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description").notNull(),
-  icon: varchar("icon", { length: 50 }).notNull(),
-  color: varchar("color", { length: 20 }).default("blue").notNull(),
-  type: mysqlEnum("type", ["seasonal", "monthly"]).notNull(),
-  season: varchar("season", { length: 20 }), // "winter", "spring", "summer", "fall"
-  targetValue: int("targetValue").notNull(), // e.g., 25 votes, 10 parks
-  startDate: timestamp("startDate").notNull(),
-  endDate: timestamp("endDate").notNull(),
-  isActive: boolean("isActive").notNull().default(true),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+	id: int().autoincrement().notNull(),
+	code: varchar({ length: 50 }).notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	description: text().notNull(),
+	icon: varchar({ length: 50 }).notNull(),
+	color: varchar({ length: 20 }).default('blue').notNull(),
+	type: mysqlEnum(['seasonal','monthly']).notNull(),
+	season: varchar({ length: 20 }),
+	targetValue: int().notNull(),
+	startDate: timestamp({ mode: 'string' }).notNull(),
+	endDate: timestamp({ mode: 'string' }).notNull(),
+	isActive: tinyint().default(1).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
 
-export type Challenge = typeof challenges.$inferSelect;
-export type InsertChallenge = typeof challenges.$inferInsert;
+export const parkEloHistory = mysqlTable("parkEloHistory", {
+	id: bigint({ mode: "number" }).autoincrement().notNull(),
+	parkId: int().notNull(),
+	eloRating: decimal({ precision: 10, scale: 2 }).notNull(),
+	voteId: bigint({ mode: "number" }).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
 
-/**
- * User Challenges table tracking user progress on challenges.
- * Records current progress and completion status.
- */
+export const parks = mysqlTable("parks", {
+	id: int().autoincrement().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	location: varchar({ length: 255 }).notNull(),
+	imageUrl: text().notNull(),
+	eloRating: decimal({ precision: 10, scale: 2 }).default('1500').notNull(),
+	voteCount: int().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	establishedYear: int(),
+	areaSqMiles: decimal({ precision: 10, scale: 2 }),
+	annualVisitors: int(),
+	description: text(),
+});
+
+export const userAchievements = mysqlTable("userAchievements", {
+	id: bigint({ mode: "number" }).autoincrement().notNull(),
+	userId: int().notNull(),
+	achievementId: int().notNull(),
+	unlockedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
 export const userChallenges = mysqlTable("userChallenges", {
-  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
-  challengeId: int("challengeId").notNull(),
-  progress: int("progress").default(0).notNull(),
-  isCompleted: boolean("isCompleted").notNull().default(false),
-  completedAt: timestamp("completedAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+	id: bigint({ mode: "number" }).autoincrement().notNull(),
+	userId: int().notNull(),
+	challengeId: int().notNull(),
+	progress: int().default(0).notNull(),
+	isCompleted: tinyint().default(0).notNull(),
+	completedAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
 
-export type UserChallenge = typeof userChallenges.$inferSelect;
-export type InsertUserChallenge = typeof userChallenges.$inferInsert;
+export const userVotes = mysqlTable("userVotes", {
+	id: bigint({ mode: "number" }).autoincrement().notNull(),
+	userId: int().notNull(),
+	voteId: bigint({ mode: "number" }).notNull(),
+	parkVotedFor: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const users = mysqlTable("users", {
+	id: int().autoincrement().notNull(),
+	openId: varchar({ length: 64 }).notNull(),
+	name: text(),
+	email: varchar({ length: 320 }),
+	loginMethod: varchar({ length: 64 }),
+	role: mysqlEnum(['user','admin']).default('user').notNull(),
+	displayName: varchar({ length: 255 }),
+	avatarUrl: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	lastSignedIn: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const votes = mysqlTable("votes", {
+	id: bigint({ mode: "number" }).autoincrement().notNull(),
+	park1Id: int().notNull(),
+	park2Id: int().notNull(),
+	winnerId: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
 
 /**
- * User Streaks table tracking consecutive voting days.
- * Maintains current streak and longest streak for each user.
+ * Referrals table to track user referral relationships.
+ */
+export const referrals = mysqlTable("referrals", {
+	id: bigint({ mode: "number" }).autoincrement().notNull().primaryKey(),
+	referrerId: int().notNull(),
+	refereeId: int().notNull(),
+	referralCode: varchar({ length: 20 }).notNull(),
+	status: mysqlEnum(['pending','completed','expired']).default('pending').notNull(),
+	completedAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	expiresAt: timestamp({ mode: 'string' }).notNull(),
+	updatedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').onUpdateNow().notNull(),
+});
+
+export type Referral = typeof referrals.$inferSelect;
+export type InsertReferral = typeof referrals.$inferInsert;
+
+/**
+ * Referral Rewards table to track rewards earned from referrals.
+ */
+export const referralRewards = mysqlTable("referralRewards", {
+	id: bigint({ mode: "number" }).autoincrement().notNull().primaryKey(),
+	referralId: bigint({ mode: "number" }).notNull(),
+	userId: int().notNull(),
+	rewardType: mysqlEnum(['bonus_votes','exclusive_badge','bonus_points']).notNull(),
+	rewardValue: int().notNull(),
+	description: varchar({ length: 255 }).notNull(),
+	isRedeemed: tinyint().default(0).notNull(),
+	redeemedAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').onUpdateNow().notNull(),
+});
+
+export type ReferralReward = typeof referralRewards.$inferSelect;
+export type InsertReferralReward = typeof referralRewards.$inferInsert;
+
+/**
+ * User Referral Stats table to track referral statistics per user.
+ */
+export const userReferralStats = mysqlTable("userReferralStats", {
+	id: int().autoincrement().notNull().primaryKey(),
+	userId: int().notNull(),
+	referralCode: varchar({ length: 20 }).notNull(),
+	totalInvites: int().default(0).notNull(),
+	completedReferrals: int().default(0).notNull(),
+	totalRewardsEarned: int().default(0).notNull(),
+	lastInviteSentAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').onUpdateNow().notNull(),
+});
+
+export type UserReferralStats = typeof userReferralStats.$inferSelect;
+export type InsertUserReferralStats = typeof userReferralStats.$inferInsert;
+
+/**
+ * User Streaks table to track voting streaks per user.
  */
 export const userStreaks = mysqlTable("userStreaks", {
-  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
-  userId: int("userId").notNull().unique(),
-  currentStreak: int("currentStreak").default(0).notNull(),
-  longestStreak: int("longestStreak").default(0).notNull(),
-  lastVoteDate: timestamp("lastVoteDate"),
-  streakStartDate: timestamp("streakStartDate"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+	id: bigint({ mode: "number" }).autoincrement().notNull().primaryKey(),
+	userId: int().notNull(),
+	currentStreak: int().default(0).notNull(),
+	longestStreak: int().default(0).notNull(),
+	lastVoteDate: timestamp({ mode: 'string' }),
+	streakStartDate: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').onUpdateNow().notNull(),
 });
 
 export type UserStreak = typeof userStreaks.$inferSelect;
 export type InsertUserStreak = typeof userStreaks.$inferInsert;
 
-
 /**
- * Weekly Streak Challenges table tracking weekly competitions.
- * Stores information about each week's challenge period and status.
+ * Weekly Streak Challenges table to track weekly competitions.
  */
 export const weeklyStreakChallenges = mysqlTable("weeklyStreakChallenges", {
-  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
-  weekStartDate: timestamp("weekStartDate").notNull(),
-  weekEndDate: timestamp("weekEndDate").notNull(),
-  isActive: boolean("isActive").default(true).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+	id: bigint({ mode: "number" }).autoincrement().notNull().primaryKey(),
+	weekStartDate: timestamp({ mode: 'string' }).notNull(),
+	weekEndDate: timestamp({ mode: 'string' }).notNull(),
+	isActive: tinyint().default(1).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').onUpdateNow().notNull(),
 });
 
 export type WeeklyStreakChallenge = typeof weeklyStreakChallenges.$inferSelect;
 export type InsertWeeklyStreakChallenge = typeof weeklyStreakChallenges.$inferInsert;
 
 /**
- * Weekly Badges table tracking limited-time badges earned by top streakers.
- * Stores badge awards for users who rank in top 3 each week.
+ * Weekly Badges table to award badges to top 3 streakers.
  */
 export const weeklyBadges = mysqlTable("weeklyBadges", {
-  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
-  weeklyChallenge: bigint("weeklyChallenge", { mode: "number" }).notNull(),
-  userId: int("userId").notNull(),
-  rank: int("rank").notNull(), // 1st, 2nd, or 3rd place
-  streakLength: int("streakLength").notNull(),
-  badgeIcon: varchar("badgeIcon", { length: 50 }).notNull(), // 🥇, 🥈, 🥉
-  badgeName: varchar("badgeName", { length: 100 }).notNull(), // "Weekly Champion", "Weekly Runner-Up", etc.
-  awardedAt: timestamp("awardedAt").defaultNow().notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+	id: bigint({ mode: "number" }).autoincrement().notNull().primaryKey(),
+	weeklyChallenge: bigint({ mode: "number" }).notNull(),
+	userId: int().notNull(),
+	rank: int().notNull(),
+	streakLength: int().notNull(),
+	badgeIcon: varchar({ length: 50 }).notNull(),
+	badgeName: varchar({ length: 100 }).notNull(),
+	awardedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
 
 export type WeeklyBadge = typeof weeklyBadges.$inferSelect;
 export type InsertWeeklyBadge = typeof weeklyBadges.$inferInsert;
 
-
 /**
- * Weekly Notifications table tracking notifications sent to users.
- * Stores notifications for top 3 rankings and challenge start events.
+ * Weekly Notifications table to track user notifications.
  */
 export const weeklyNotifications = mysqlTable("weeklyNotifications", {
-  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
-  weeklyChallenge: bigint("weeklyChallenge", { mode: "number" }).notNull(),
-  type: varchar("type", { length: 50 }).notNull(), // 'top_3_ranking' | 'challenge_start' | 'challenge_end'
-  title: varchar("title", { length: 255 }).notNull(),
-  message: text("message").notNull(),
-  rank: int("rank"), // For top 3 rankings: 1, 2, or 3
-  badgeIcon: varchar("badgeIcon", { length: 50 }), // 🥇, 🥈, 🥉
-  isRead: boolean("isRead").default(false).notNull(),
-  readAt: timestamp("readAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+	id: bigint({ mode: "number" }).autoincrement().notNull().primaryKey(),
+	userId: int().notNull(),
+	weeklyChallenge: bigint({ mode: "number" }).notNull(),
+	type: varchar({ length: 50 }).notNull(),
+	title: varchar({ length: 255 }).notNull(),
+	message: text().notNull(),
+	rank: int(),
+	badgeIcon: varchar({ length: 50 }),
+	isRead: tinyint().default(0).notNull(),
+	readAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').onUpdateNow().notNull(),
 });
 
 export type WeeklyNotification = typeof weeklyNotifications.$inferSelect;
 export type InsertWeeklyNotification = typeof weeklyNotifications.$inferInsert;
-
-
-/**
- * Referrals table tracking user referral relationships.
- * Stores referrer-referee relationships and tracks successful referrals.
- */
-export const referrals = mysqlTable("referrals", {
-  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
-  referrerId: int("referrerId").notNull(), // User who sent the invite
-  refereeId: int("refereeId").notNull(), // User who was invited
-  referralCode: varchar("referralCode", { length: 20 }).notNull().unique(), // Unique code for tracking
-  status: mysqlEnum("status", ["pending", "completed", "expired"]).default("pending").notNull(),
-  completedAt: timestamp("completedAt"), // When referee made their first vote
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  expiresAt: timestamp("expiresAt").notNull(), // 30 days from creation
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-export type Referral = typeof referrals.$inferSelect;
-export type InsertReferral = typeof referrals.$inferInsert;
-
-/**
- * Referral Rewards table tracking bonus points and badges earned from referrals.
- * Stores rewards given to referrers when referees complete actions.
- */
-export const referralRewards = mysqlTable("referralRewards", {
-  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
-  referralId: bigint("referralId", { mode: "number" }).notNull(), // Link to referral
-  userId: int("userId").notNull(), // User receiving the reward
-  rewardType: mysqlEnum("rewardType", ["bonus_votes", "exclusive_badge", "bonus_points"]).notNull(),
-  rewardValue: int("rewardValue").notNull(), // Points or votes granted
-  description: varchar("description", { length: 255 }).notNull(),
-  isRedeemed: boolean("isRedeemed").default(false).notNull(),
-  redeemedAt: timestamp("redeemedAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-export type ReferralReward = typeof referralRewards.$inferSelect;
-export type InsertReferralReward = typeof referralRewards.$inferInsert;
-
-/**
- * User Referral Stats table tracking referral statistics per user.
- * Stores aggregated referral data for quick access.
- */
-export const userReferralStats = mysqlTable("userReferralStats", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().unique(),
-  referralCode: varchar("referralCode", { length: 20 }).notNull().unique(),
-  totalInvites: int("totalInvites").default(0).notNull(),
-  completedReferrals: int("completedReferrals").default(0).notNull(),
-  totalRewardsEarned: int("totalRewardsEarned").default(0).notNull(),
-  lastInviteSentAt: timestamp("lastInviteSentAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-export type UserReferralStats = typeof userReferralStats.$inferSelect;
-export type InsertUserReferralStats = typeof userReferralStats.$inferInsert;

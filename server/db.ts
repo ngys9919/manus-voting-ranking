@@ -830,8 +830,8 @@ export async function seedChallenges() {
         type: def.type,
         season: def.season || null,
         targetValue: def.targetValue,
-        startDate,
-        endDate,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
         isActive: true,
       };
     });
@@ -858,7 +858,8 @@ export async function getActiveChallenges() {
       .from(challenges)
       .where(eq(challenges.isActive, true));
     // Filter in memory for date comparison
-    return result.filter(c => c.startDate <= now && c.endDate >= now);
+    const nowStr = now.toISOString();
+    return result.filter(c => c.startDate <= nowStr && c.endDate >= nowStr);
   } catch (error) {
     console.error("[Database] Failed to get active challenges:", error);
     throw error;
@@ -939,7 +940,7 @@ export async function updateChallengeProgress(userId: number, challengeId: numbe
         .set({
           progress: newProgress,
           isCompleted,
-          completedAt: isCompleted ? new Date() : null,
+          completedAt: isCompleted ? new Date().toISOString() : null,
         })
         .where(
           eq(userChallenges.userId, userId) &&
@@ -1546,7 +1547,7 @@ export async function sendTop3RankingNotifications(challengeId: number): Promise
         message: `Congratulations! Your ${badge.streakLength}-day voting streak earned you a ${badge.badgeName} badge. Keep it up!`,
         rank: badge.rank,
         badgeIcon: badge.badgeIcon,
-        isRead: false,
+        isRead: 0,
       });
 
       notifications.push({
@@ -1558,10 +1559,10 @@ export async function sendTop3RankingNotifications(challengeId: number): Promise
         message: `Congratulations! Your ${badge.streakLength}-day voting streak earned you a ${badge.badgeName} badge. Keep it up!`,
         rank: badge.rank,
         badgeIcon: badge.badgeIcon,
-        isRead: false,
+        isRead: 0,
         readAt: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
     }
 
@@ -1592,7 +1593,7 @@ export async function sendChallengeStartNotifications(challengeId: number): Prom
         type: "challenge_start",
         title: "🏆 New Weekly Streak Challenge Started!",
         message: "A new weekly challenge has begun! Vote daily to build your streak and compete for top 3 badges.",
-        isRead: false,
+        isRead: 0,
       });
 
       notifications.push({
@@ -1604,10 +1605,10 @@ export async function sendChallengeStartNotifications(challengeId: number): Prom
         message: "A new weekly challenge has begun! Vote daily to build your streak and compete for top 3 badges.",
         rank: null,
         badgeIcon: null,
-        isRead: false,
+        isRead: 0,
         readAt: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
     }
 
@@ -1671,9 +1672,9 @@ export async function markNotificationAsRead(notificationId: number): Promise<bo
     await db
       .update(weeklyNotifications)
       .set({
-        isRead: true,
-        readAt: new Date(),
-        updatedAt: new Date(),
+        isRead: 1,
+        readAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(weeklyNotifications.id, BigInt(notificationId)) as any);
 
@@ -1695,9 +1696,9 @@ export async function markAllNotificationsAsRead(userId: number): Promise<boolea
     await db
       .update(weeklyNotifications)
       .set({
-        isRead: true,
-        readAt: new Date(),
-        updatedAt: new Date(),
+        isRead: 1,
+        readAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(weeklyNotifications.userId, userId) as any);
 
@@ -1924,13 +1925,13 @@ export async function createReferral(referrerId: number, refereeEmail: string): 
       refereeId: 0, // Will be updated when referee signs up
       referralCode,
       status: 'pending',
-      expiresAt,
+      expiresAt: expiresAt.toISOString(),
     });
 
     // Update referrer's stats
     await db
       .update(userReferralStats)
-      .set({ totalInvites: sql`totalInvites + 1`, lastInviteSentAt: new Date() })
+      .set({ totalInvites: sql`totalInvites + 1`, lastInviteSentAt: new Date().toISOString() })
       .where(eq(userReferralStats.userId, referrerId));
 
     return { referralCode, expiresAt };
@@ -1964,7 +1965,7 @@ export async function completeReferral(referralCode: string, refereeId: number):
     // Update referral status
     await db
       .update(referrals)
-      .set({ status: 'completed', refereeId, completedAt: new Date() })
+      .set({ status: 'completed', refereeId, completedAt: new Date().toISOString() })
       .where(eq(referrals.referralCode, referralCode));
 
     // Update referrer's stats
@@ -2000,7 +2001,7 @@ export async function awardReferralReward(userId: number, referralId: number, re
       rewardType,
       rewardValue,
       description,
-      isRedeemed: false,
+      isRedeemed: 0,
     });
 
     // Update user's total rewards
