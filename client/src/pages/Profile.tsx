@@ -7,8 +7,6 @@ import { useState } from "react";
 import { ParkDetailsModal } from "@/components/ParkDetailsModal";
 import { Badges } from "@/components/Badges";
 import { Challenges } from "@/components/Challenges";
-import { PushNotificationToggle } from "@/components/PushNotificationToggle";
-import { AchievementProgress } from "@/components/AchievementProgress";
 import type { Park } from "@shared/types";
 import { Loader2, Trophy, TrendingUp, Calendar } from "lucide-react";
 
@@ -73,13 +71,8 @@ export default function Profile() {
 
         {/* User Info */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">{user?.name || "User"}</h1>
-              <p className="text-gray-600">{user?.email}</p>
-            </div>
-            <PushNotificationToggle />
-          </div>
+          <h1 className="text-3xl font-bold mb-2">{user?.name || "User"}</h1>
+          <p className="text-gray-600">{user?.email}</p>
         </div>
 
         {/* Statistics Cards */}
@@ -140,12 +133,6 @@ export default function Profile() {
           ) : (
             <Badges achievements={(achievements || []).map(a => ({ ...a.achievement, unlockedAt: a.unlockedAt }))} />
           )}
-        </div>
-
-        {/* Achievement Progress */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-bold mb-6">Next Achievements</h2>
-          <AchievementProgress />
         </div>
 
         {/* Challenges */}

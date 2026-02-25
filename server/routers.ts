@@ -34,12 +34,6 @@ import {
   getUnreadNotificationCount,
   markNotificationAsRead,
   markAllNotificationsAsRead,
-  savePushSubscription,
-  getUserPushSubscriptions,
-  removePushSubscription,
-  getAchievementProgress,
-  getLockedAchievements,
-  getNextAchievements,
 } from "./db";
 
 export const appRouter = router({
@@ -161,23 +155,6 @@ export const appRouter = router({
       const unlockedAchievements = await checkAndUnlockAchievements(ctx.user.id);
       return unlockedAchievements;
     }),
-
-    getProgress: protectedProcedure.query(async ({ ctx }) => {
-      const progress = await getAchievementProgress(ctx.user.id);
-      return progress;
-    }),
-
-    getLocked: protectedProcedure.query(async ({ ctx }) => {
-      const locked = await getLockedAchievements(ctx.user.id);
-      return locked;
-    }),
-
-    getNext: protectedProcedure
-      .input(z.object({ limit: z.number().default(3) }))
-      .query(async ({ ctx, input }) => {
-        const next = await getNextAchievements(ctx.user.id, input.limit);
-        return next;
-      }),
   }),
 
   challenges: router({
@@ -318,36 +295,6 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const notifications = await sendChallengeStartNotifications(input.challengeId);
         return notifications;
-      }),
-
-    savePushSubscription: protectedProcedure
-      .input(z.object({
-        subscription: z.object({
-          endpoint: z.string(),
-          keys: z.object({
-            auth: z.string(),
-            p256dh: z.string(),
-          }),
-        }),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const subscription = await savePushSubscription(
-          ctx.user.id,
-          input.subscription
-        );
-        return subscription;
-      }),
-
-    getPushSubscriptions: protectedProcedure.query(async ({ ctx }) => {
-      const subscriptions = await getUserPushSubscriptions(ctx.user.id);
-      return subscriptions;
-    }),
-
-    removePushSubscription: protectedProcedure
-      .input(z.object({ endpoint: z.string() }))
-      .mutation(async ({ input }) => {
-        const success = await removePushSubscription(input.endpoint);
-        return success;
       }),
   }),
 });
