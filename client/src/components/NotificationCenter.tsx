@@ -3,6 +3,8 @@ import { Bell, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
+import { playNotificationSound, getNotificationSoundPreference } from "@/lib/audioAlert";
+
 
 interface Notification {
   id: bigint;
@@ -22,6 +24,7 @@ interface Notification {
 export function NotificationCenter() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [lastNotificationCount, setLastNotificationCount] = useState(0);
 
   const { data: notificationsData, refetch } = trpc.notifications.getNotifications.useQuery(
     { limit: 20 },
@@ -57,6 +60,24 @@ export function NotificationCenter() {
     }
   }, [notificationsData]);
 
+  // Play sound when new notifications arrive
+  useEffect(() => {
+    if (unreadCount !== undefined && unreadCount > lastNotificationCount) {
+      const soundEnabled = getNotificationSoundPreference();
+      if (soundEnabled) {
+        playNotificationSound(true);
+      }
+      setLastNotificationCount(unreadCount);
+    }
+  }, [unreadCount, lastNotificationCount]);
+
+  // Initialize last notification count on first render
+  useEffect(() => {
+    if (unreadCount !== undefined && lastNotificationCount === 0) {
+      setLastNotificationCount(unreadCount);
+    }
+  }, []);
+
   const handleMarkAsRead = (notificationId: bigint) => {
     markAsReadMutation.mutate({ notificationId: Number(notificationId) });
   };
@@ -64,6 +85,13 @@ export function NotificationCenter() {
   const handleMarkAllAsRead = () => {
     markAllAsReadMutation.mutate();
   };
+
+  // Update last notification count when notifications are marked as read
+  useEffect(() => {
+    if (unreadCount !== undefined) {
+      setLastNotificationCount(unreadCount);
+    }
+  }, [unreadCount]);
 
   const getNotificationColor = (type: string) => {
     switch (type) {
