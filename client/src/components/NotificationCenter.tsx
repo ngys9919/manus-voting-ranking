@@ -32,11 +32,14 @@ export function NotificationCenter() {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
+  // Call trpc.useUtils() at the top level of the component
+  const utils = trpc.useUtils();
+
   const markAsReadMutation = trpc.notifications.markAsRead.useMutation({
     onSuccess: () => {
       refetch();
       // Invalidate the unread count cache to update the badge
-      trpc.useUtils().notifications.getUnreadCount.invalidate();
+      utils.notifications.getUnreadCount.invalidate();
     },
   });
 
@@ -44,7 +47,7 @@ export function NotificationCenter() {
     onSuccess: () => {
       refetch();
       // Invalidate the unread count cache to update the badge
-      trpc.useUtils().notifications.getUnreadCount.invalidate();
+      utils.notifications.getUnreadCount.invalidate();
     },
   });
 
