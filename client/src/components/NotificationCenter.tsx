@@ -35,12 +35,16 @@ export function NotificationCenter() {
   const markAsReadMutation = trpc.notifications.markAsRead.useMutation({
     onSuccess: () => {
       refetch();
+      // Invalidate the unread count cache to update the badge
+      trpc.useUtils().notifications.getUnreadCount.invalidate();
     },
   });
 
   const markAllAsReadMutation = trpc.notifications.markAllAsRead.useMutation({
     onSuccess: () => {
       refetch();
+      // Invalidate the unread count cache to update the badge
+      trpc.useUtils().notifications.getUnreadCount.invalidate();
     },
   });
 
