@@ -200,3 +200,13 @@
 
 ## Bug Fixes
 - [ ] Fix OAuth callback error when voting
+
+
+## Category-Specific Notification Sounds
+- [ ] Design notification category system (achievements, challenges, rankings, etc.)
+- [ ] Update audioAlert utility to support per-category sound preferences
+- [ ] Add category field to notification data structure
+- [ ] Update NotificationPreferences UI with per-category sound selectors
+- [ ] Integrate category-specific sounds into NotificationCenter
+- [ ] Write tests for category sound selection and playback
+- [ ] Verify sound plays correctly for each notification category
