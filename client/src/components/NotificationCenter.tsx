@@ -3,7 +3,7 @@ import { Bell, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { playNotificationSound, getNotificationSoundPreference } from "@/lib/audioAlert";
+import { playNotificationSound, getNotificationSoundPreference, getNotificationSoundStyle } from "@/lib/audioAlert";
 
 
 interface Notification {
@@ -65,7 +65,8 @@ export function NotificationCenter() {
     if (unreadCount !== undefined && unreadCount > lastNotificationCount) {
       const soundEnabled = getNotificationSoundPreference();
       if (soundEnabled) {
-        playNotificationSound(true);
+        const soundStyle = getNotificationSoundStyle();
+        playNotificationSound(true, soundStyle);
       }
       setLastNotificationCount(unreadCount);
     }
